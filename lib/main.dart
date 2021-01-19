@@ -82,9 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
       this._outputController.text = barcode;
       setState(() {
         returnedBarc = barcode;
-        addToDb();
-        encryptData(returnedBarc);
+       
+        //encryptData(returnedBarc);
       });
+       await addToDb();
     }
   }
 
@@ -193,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!ref.exists) {
       if (index == 1) {
         setState(() {
-          _key.currentState.insertItem(index - 1);
+         _key.currentState.insertItem(index - 1);
         });
       } else {
         _key.currentState.insertItem(index - 1);

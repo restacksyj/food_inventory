@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 
 class DatabaseService {
   final String uid;
+  final GetFood foodGetter = GetFood();
   DatabaseService({this.uid});
   final CollectionReference usersCollection =
       FirebaseFirestore.instance.collection('users');
@@ -34,13 +35,13 @@ class DatabaseService {
           .doc(uid)
           .collection("foods")
           .doc(name)
-          .set(FoodModel(foodName: await GetFood().getfoodName(name)??"Loading", date: date, qty: 1).toJson());
-      print(usersCollection
-          .doc(uid)
-          .collection("foods")
-          .snapshots()
-          .first
-          .toString());
+          .set(FoodModel(foodName: "Loading name..", date: date, qty: 1).toJson());
+      final foodname = await foodGetter.getfoodName(name);
+      await usersCollection
+            .doc(uid)
+            .collection("foods")
+            .doc(name)
+            .update({"foodName": foodname});
     } on SocketException {
       Get.showSnackbar(GetBar(
         title: "Failed",
