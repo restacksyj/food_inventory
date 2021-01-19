@@ -190,8 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
     var index =
         await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
             .getNumberOfItems();
-    print(index);
-    GetFood().getfoodName(returnedBarc);
     if (!ref.exists) {
       if (index == 1) {
         setState(() {
@@ -222,10 +220,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
         .deleteRecord(id);
-    // Get.showSnackbar(GetBar(
-    //   message: "${food.get("foodName")} deleted",
-    //   duration: Duration(seconds: 1),
-    // ));
     BotToast.showSimpleNotification(
             title: "${food.get("foodName")} Item deleted",
             align: Alignment.bottomCenter,
@@ -316,19 +310,6 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 
-class GetFood extends GetConnect{
-  getfoodName(String barcode)async{
-    final res =await get("https://world.openfoodfacts.org/api/v0/product/$barcode.json");
-    final data = res.body;
-    if(data["status"]==1){
-
-    print(data["product"]["product_name"].toString());
-    }else{
-      print("Product not found");
-    }
-    // print(data);
-  }
-}
 
 //Barcode scanning works - no image pickup - DOne
 //Google login - Done

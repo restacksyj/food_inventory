@@ -34,7 +34,7 @@ class DatabaseService {
           .doc(uid)
           .collection("foods")
           .doc(name)
-          .set(FoodModel(foodName: await GetFood().getfoodName(name), date: date, qty: 1).toJson());
+          .set(FoodModel(foodName: await GetFood().getfoodName(name)??"Loading", date: date, qty: 1).toJson());
       print(usersCollection
           .doc(uid)
           .collection("foods")
@@ -143,7 +143,7 @@ class GetFood extends GetConnect{
     final res =await get("https://world.openfoodfacts.org/api/v0/product/$barcode.json");
     final data = res.body;
     if(data["status"]==1){
-    return data["product"]["product_name"].toString();
+    return data["product"]["product_name"].toString()=="null" ?"No name":data["product"]["product_name"].toString();
     }else{
       print("Product not found");
       return "No name";
