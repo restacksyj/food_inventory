@@ -61,6 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     this._outputController = TextEditingController();
+     FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
+    FlutterStatusbarcolor.setStatusBarColor(Colors.white);
   }
 
   encryptData(String text) {
@@ -74,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     print(decrypted); // Lorem ipsum dolor sit amet, consectetur adipiscing elit
     print(encrypted
-        .base64); // R4PxiU3h8YoIRqVowBXm36ZcCeNeZ4s1OvVBTfFlZRdmohQqOpPQqD1YecJeZMAop/hZ4OxqgC1WtwvX/hP9mw==
+        .base16); // R4PxiU3h8YoIRqVowBXm36ZcCeNeZ4s1OvVBTfFlZRdmohQqOpPQqD1YecJeZMAop/hZ4OxqgC1WtwvX/hP9mw==
   }
 
   Future _scan() async {
@@ -95,10 +97,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    FlutterStatusbarcolor.setStatusBarColor(Colors.white);
+   
     return Scaffold(
         floatingActionButton: FloatingActionButton(
           onPressed: () => _scan(),
