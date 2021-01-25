@@ -19,18 +19,22 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:intl/intl.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:search_page/search_page.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:flutter/rendering.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+  // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    //  FlutterStatusbarcolor.setStatusBarColor(Colors.black);
     return GetMaterialApp(
       builder: BotToastInit(), //1. call BotToastInit
       navigatorObservers: [BotToastNavigatorObserver()],
@@ -49,6 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController _outputController;
   String returnedBarc = "";
   final _key = GlobalKey<AnimatedListState>();
+  ScrollController _controller = ScrollController();
+   int highlightIndex = 0;
+   Color currentColor = Color.fromRGBO(109, 97, 231, 1.0);
+    ItemController c = Get.put(ItemController());
 
   void initState() {
     super.initState();
@@ -82,15 +90,15 @@ class _HomeScreenState extends State<HomeScreen> {
       this._outputController.text = barcode;
       setState(() {
         returnedBarc = barcode;
-       
-        //encryptData(returnedBarc);
       });
-       await addToDb();
+      await addToDb();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
+    FlutterStatusbarcolor.setStatusBarColor(Colors.white);
     return Scaffold(
         floatingActionButton: FloatingActionButton(
           onPressed: () => _scan(),
@@ -131,9 +139,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       )
                     ],
                   ),
-                  Icon(
-                    Icons.account_box_outlined,
-                    size: 30.0,
+                  InkWell(
+                    onTap: () => null,
+                    child: Icon(
+                      Icons.account_box_outlined,
+                      size: 30.0,
+                    ),
                   )
                 ],
               ),
@@ -141,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(
               height: 10.0,
             ),
-            Expanded(child: listView())
+           Expanded(child: listView())
           ],
         ),
       ),
@@ -166,18 +177,39 @@ class _HomeScreenState extends State<HomeScreen> {
               return noItems();
             } else {
               return AnimatedList(
+                  controller: _controller,
                   key: _key,
-                  padding: EdgeInsets.all(15.0),
+                  padding: EdgeInsets.all(10.0),
                   itemBuilder: (context, int index, animation) {
                     return FadeTransition(
-                        opacity: animation,
-                        child: foodItem(items[index], index));
+                      opacity: animation,
+                      child: foodItem(items[index], index),
+                    );
                   },
                   initialItemCount: items.length);
             }
           }
 
           return Container();
+        });
+  }
+
+  void _goToElement(int index) {
+    _controller.animateTo(
+        (74.0 *
+            index), // 100 is the height of container and index of 6th element is 5
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut);
+  }
+
+  changeItemColor(){
+     Timer(Duration(seconds: 0),(){
+          setState(() {
+            currentColor = Colors.deepOrange;
+          });
+        });
+        setState(() {
+          currentColor = Color.fromRGBO(109, 97, 231, 1.0);
         });
   }
 
@@ -188,17 +220,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
     await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
         .updateRecord(returnedBarc);
-    var index =
+    Map<String, int> data =
         await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
-            .getNumberOfItems();
+            .getDataOfItems(id: returnedBarc);
     if (!ref.exists) {
+      int index = data["nofOfItems"];
       if (index == 1) {
         setState(() {
-         _key.currentState.insertItem(index - 1);
+          _key.currentState.insertItem(index - 1);
         });
       } else {
         _key.currentState.insertItem(index - 1);
       }
+    } else {
+      _goToElement(data["indexOfItem"]);
+      c.setIndex(data["indexOfItem"]);
+      // setState(() {
+      //   highlightIndex = data["indexOfItem"];
+      // });
+     // changeItemColor();
     }
   }
 
@@ -222,14 +262,14 @@ class _HomeScreenState extends State<HomeScreen> {
     await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
         .deleteRecord(id);
     BotToast.showSimpleNotification(
-            title: "${food.get("foodName")} Item deleted",
-            align: Alignment.bottomCenter,
-            backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
-            titleStyle: TextStyle(color: Colors.white),
-            closeIcon: Icon(
-              Icons.close,
-              color: Colors.white,
-            ));
+        title: "${food.get("foodName")} deleted",
+        align: Alignment.bottomCenter,
+        backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
+        titleStyle: TextStyle(color: Colors.white),
+        closeIcon: Icon(
+          Icons.close,
+          color: Colors.white,
+        ));
   }
 
   Widget noItems() {
@@ -253,7 +293,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget foodItem(QueryDocumentSnapshot food, int index) {
-    
     return InkWell(
       onLongPress: () => showUpdateModal(context, food),
       onDoubleTap: () => deleteFromDB(food, food.id, index),
@@ -261,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: EdgeInsets.all(10.0),
         margin: EdgeInsets.all(3.0),
         decoration: BoxDecoration(
-            color: Color.fromRGBO(109, 97, 231, 1.0),
+            color: index == highlightIndex ? currentColor:Color.fromRGBO(109, 97, 231, 1.0),
             borderRadius: BorderRadius.all(Radius.circular(5.0))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,13 +308,43 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  food.get("foodName").toString().split(" ").take(5).join(" "),
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.white, fontSize: 16.0),
+                food.get("foodName").toString().contains("Loading name..")
+                    ? Shimmer.fromColors(
+                        baseColor: Colors.grey[300],
+                        highlightColor: Colors.grey[100],
+                        child: Text(
+                          food
+                              .get("foodName")
+                              .toString()
+                              .split(" ")
+                              .take(5)
+                              .join(" "),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.white, fontSize: 16.0),
+                        ),
+                      )
+                    : Text(
+                        food
+                            .get("foodName")
+                            .toString()
+                            .split(" ")
+                            .take(5)
+                            .join(" "),
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.white, fontSize: 16.0),
+                      ),
+                RichText(
+                  text: TextSpan(children: [
+                    TextSpan(
+                        text: 'Qty: ', style: TextStyle(color: Colors.white)),
+                    TextSpan(
+                        text: food.get("qty").toString(),
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
+                  ]),
                 ),
-                Text('Qty: ${food.get("qty").toString()}',
-                    style: TextStyle(color: Colors.white)),
+                // Text('Qty: ${food.get("qty").toString()}',
+                //     style: TextStyle(color: Colors.white)),
               ],
             ),
             SizedBox(
@@ -307,11 +376,52 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  
+//   showSearchPage()async{
+//    List<Person> people = [
+//     Person('Mike', 'Barron', 64),
+//     Person('Todd', 'Black', 30),
+//     Person('Ahmad', 'Edwards', 55),
+//     Person('Anthony', 'Johnson', 67),
+//     Person('Annette', 'Brooks', 39),
+//   ];
+
+//     // final items = await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
+//     //         .getAllItems().toList();
+//     //         print(items);
+//      showSearch(
+//           context: context,
+//           delegate: SearchPage<Person>(
+//             items: people,
+//             searchLabel: 'Search people',
+//             suggestion: Center(
+//               child: Text('Filter people by name, surname or age'),
+//             ),
+//             failure: Center(
+//               child: Text('No person found :('),
+//             ),
+//             filter: (person) => [
+//               person.name,
+//               person.surname,
+//               person.age.toString(),
+//             ],
+//             builder: (person) => ListTile(
+//               title: Text(person.name),
+//               subtitle: Text(person.surname),
+//               trailing: Text('${person.age} yo'),
+//             ),
+//           ),
+//         );
+
 }
 
+//   }
+// }
+// class Person {
+//   final String name, surname;
+//   final num age;
 
-
+//   Person(this.name, this.surname, this.age);
+// }
 //Barcode scanning works - no image pickup - DOne
 //Google login - Done
 //Encryption - done
@@ -324,3 +434,21 @@ class _HomeScreenState extends State<HomeScreen> {
 //ftech names from API - done
 //mention bought on ui - done
 //highlighting when increasing qty
+
+//new tasks
+//add to db - scroll to index nut work with aniamted list -> done
+// updating quanitty of existing item hightlight it
+//encrypt data
+//Google sign in and intro screen -> done
+//user logout and clean code
+//deploy to ustsavized :)
+
+
+class ItemController extends GetxController{
+  RxInt highIndex = 0.obs;
+
+  setIndex(int index){
+    highIndex.value = index;
+    update();
+  }
+}

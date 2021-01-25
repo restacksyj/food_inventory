@@ -23,25 +23,39 @@ class DatabaseService {
         .map((event) => event.docs.toList());
   }
 
-  Future<int> getNumberOfItems() async {
-    final len = await usersCollection.doc(uid).collection("foods").get();
-    return len.docs.length;
+  Future<Map<String, int>> getDataOfItems({String id}) async {
+    final Map<String, int> data = Map<String, int>();
+    final res = await usersCollection
+        .doc(uid)
+        .collection("foods")
+        .orderBy("date", descending: false)
+        .get();
+    data["nofOfItems"] = res.docs.length;
+    data["indexOfItem"] = res.docs.indexWhere((element) => element.id == id);
+    print(data["indexOfItem"] );
+    return data;
+  }
+
+  Future<int> getIndexOfItem(String id) async {
+    final len = await usersCollection
+        .doc(uid)
+        .collection("foods")
+        .orderBy("date", descending: false)
+        .get();
+    return len.docs.indexWhere((element) => element.id == id);
   }
 
   Future<void> createRecord(String name) async {
     var date = DateTime.now().millisecondsSinceEpoch;
     try {
+      await usersCollection.doc(uid).collection("foods").doc(name).set(
+          FoodModel(foodName: "Loading name..", date: date, qty: 1).toJson());
+      final foodname = await foodGetter.getfoodName(name);
       await usersCollection
           .doc(uid)
           .collection("foods")
           .doc(name)
-          .set(FoodModel(foodName: "Loading name..", date: date, qty: 1).toJson());
-      final foodname = await foodGetter.getfoodName(name);
-      await usersCollection
-            .doc(uid)
-            .collection("foods")
-            .doc(name)
-            .update({"foodName": foodname});
+          .update({"foodName": foodname});
     } on SocketException {
       Get.showSnackbar(GetBar(
         title: "Failed",
@@ -59,7 +73,7 @@ class DatabaseService {
       final docref =
           await usersCollection.doc(uid).collection("foods").doc(barcode).get();
       if (docref.exists) {
-      BotToast.showSimpleNotification(
+        BotToast.showSimpleNotification(
             title: "Item exists. Updating quantity",
             align: Alignment.bottomCenter,
             backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
@@ -97,18 +111,18 @@ class DatabaseService {
     }
   }
 
-  recordExists(String barcode)async{
-    try{
+  recordExists(String barcode) async {
+    try {
       final docref =
           await usersCollection.doc(uid).collection("foods").doc(barcode).get();
-          return docref;
-    }on SocketException {
+      return docref;
+    } on SocketException {
       Get.showSnackbar(GetBar(
         title: "Failed",
         message: "Something went wrong. Please try again",
         duration: Duration(seconds: 3),
       ));
-    }catch(e){
+    } catch (e) {
       print(e);
       rethrow;
     }
@@ -135,17 +149,19 @@ class DatabaseService {
       print(e);
       rethrow;
     }
-
   }
 }
 
-class GetFood extends GetConnect{
-  Future<String> getfoodName(String barcode)async{
-    final res =await get("https://world.openfoodfacts.org/api/v0/product/$barcode.json");
+class GetFood extends GetConnect {
+  Future<String> getfoodName(String barcode) async {
+    final res = await get(
+        "https://world.openfoodfacts.org/api/v0/product/$barcode.json");
     final data = res.body;
-    if(data["status"]==1){
-    return data["product"]["product_name"].toString()=="null" ?"No name":data["product"]["product_name"].toString();
-    }else{
+    if (data["status"] == 1) {
+      return data["product"]["product_name"].toString() == "null" || data["product"]["product_name"].toString().isEmpty
+          ? "No name"
+          : data["product"]["product_name"].toString();
+    } else {
       print("Product not found");
       return "No name";
     }
