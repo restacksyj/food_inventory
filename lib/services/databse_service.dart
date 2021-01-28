@@ -4,7 +4,6 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/food_model.dart';
-import 'package:food_inventory/models/user_model.dart';
 import 'package:food_inventory/services/encryption.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:get/get.dart';
@@ -18,13 +17,10 @@ class DatabaseService {
 
   final Encryption encryption = Encryption();
 
-
-  encBarc(String barcode){
-    final encStr =  Encryption.encryptText(barcode).base64;
-    return encStr.replaceAll("/","*");
+  encBarc(String barcode) {
+    final encStr = Encryption.encryptText(barcode).base64;
+    return encStr.replaceAll("/", "*");
   }
-
-
 
   Stream getAllItems() {
     return usersCollection
@@ -43,7 +39,8 @@ class DatabaseService {
         .orderBy("date", descending: false)
         .get();
     data["nofOfItems"] = res.docs.length;
-    data["indexOfItem"] = res.docs.indexWhere((element) => element.id == encBarc(id));
+    data["indexOfItem"] =
+        res.docs.indexWhere((element) => element.id == encBarc(id));
     print(data["indexOfItem"]);
     return data;
   }
@@ -59,27 +56,30 @@ class DatabaseService {
 
   Future<void> createRecord(String barcode) async {
     var date = DateTime.now().millisecondsSinceEpoch;
-     
+
     try {
-      await usersCollection.doc(uid).collection("foods").doc( encBarc(barcode)).set(
-          FoodModel(foodName: "Loading name..", date: date, qty: 1).toJson());
-      final foodName = await foodGetter.getfoodName(barcode);
-      final  enc =  Encryption.encryptText(foodName);
       await usersCollection
           .doc(uid)
           .collection("foods")
-          .doc(  encBarc(barcode))
+          .doc(encBarc(barcode))
+          .set(FoodModel(foodName: "Loading name..", date: date, qty: 1)
+              .toJson());
+      final foodName = await foodGetter.getfoodName(barcode);
+      final enc = Encryption.encryptText(foodName);
+      await usersCollection
+          .doc(uid)
+          .collection("foods")
+          .doc(encBarc(barcode))
           .update({"foodName": enc.base64});
-
     } on SocketException {
       Get.showSnackbar(GetBar(
         title: "Failed",
         message: "Coudln't create record. Please try again",
         duration: Duration(seconds: 3),
       ));
-    } on Exception{
-    BotToast.showText(text: "Some error occured");
-    }catch (e) {
+    } on Exception {
+      BotToast.showText(text: "Some error occured");
+    } catch (e) {
       print(e);
       rethrow;
     }
@@ -87,8 +87,11 @@ class DatabaseService {
 
   updateRecord(String barcode) async {
     try {
-      final docref =
-          await usersCollection.doc(uid).collection("foods").doc(  encBarc(barcode)).get();
+      final docref = await usersCollection
+          .doc(uid)
+          .collection("foods")
+          .doc(encBarc(barcode))
+          .get();
       if (docref.exists) {
         BotToast.showSimpleNotification(
             title: "Item exists. Updating quantity",
@@ -102,7 +105,7 @@ class DatabaseService {
         return await usersCollection
             .doc(uid)
             .collection("foods")
-            .doc(  encBarc(barcode))
+            .doc(encBarc(barcode))
             .update({"qty": docref.get("qty") + 1});
       } else {
         createRecord(barcode);
@@ -122,12 +125,9 @@ class DatabaseService {
         message: "Coudln't create record. Please try again",
         duration: Duration(seconds: 3),
       ));
-    } on Exception{
-    BotToast.showText(text: "Some error occured");
-    }
-    
-    
-    catch (e) {
+    } on Exception {
+      BotToast.showText(text: "Some error occured");
+    } catch (e) {
       print(e);
       rethrow;
     }
@@ -135,8 +135,11 @@ class DatabaseService {
 
   recordExists(String barcode) async {
     try {
-      final docref =
-          await usersCollection.doc(uid).collection("foods").doc(  encBarc(barcode)).get();
+      final docref = await usersCollection
+          .doc(uid)
+          .collection("foods")
+          .doc(encBarc(barcode))
+          .get();
       return docref;
     } on SocketException {
       Get.showSnackbar(GetBar(
@@ -156,7 +159,7 @@ class DatabaseService {
 
   updateFoodItem({String foodName, int qty, String barcode}) async {
     try {
-      final encrypt.Encrypted encFoodName =  Encryption.encryptText(foodName);
+      final encrypt.Encrypted encFoodName = Encryption.encryptText(foodName);
       return await usersCollection
           .doc(uid)
           .collection("foods")

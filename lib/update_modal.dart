@@ -16,24 +16,21 @@ final TextEditingController _updateFoodQty = TextEditingController();
 final Color blue = Color.fromRGBO(109, 97, 231, 1.0);
 final Color pink = Color.fromRGBO(222, 110, 131, 1.0);
 
-getDecText(text){
-    return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
-  }
+getDecText(text) {
+  return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
+}
 
 showUpdateModal(BuildContext context, QueryDocumentSnapshot food) {
   _updateFoodName.text = Encryption.decryptText(
       encrypt.Encrypted.fromBase64(food.get("foodName")));
   _updateFoodQty.text = food.get("qty").toString();
   return showMaterialModalBottomSheet(
-    // expand: true,
     expand: false,
-
     enableDrag: true,
     shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
             topLeft: Radius.circular(25.0), topRight: Radius.circular(25.0))),
     context: context,
-
     builder: (context) => WillPopScope(
       child: modalBody(context, food),
       onWillPop: () async => true,
@@ -72,18 +69,11 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                     height: 80.0,
                     child: TextFormField(
                       controller: _updateFoodName,
-                      // onEditingComplete: () {
-                      //   print('Done');
-                      //   if (_formKeyTwo.currentState.validate()) {
-                      //     _formKeyTwo.currentState.save();
-                      //   }
-                      // },
+
                       onFieldSubmitted: (value) {
-                        // print("onfield");
                         if (value.isNotEmpty) {
-                          // MovieService().updateData(movie.id,value);
                           formValid(context, food);
-                          // Navigator.of(context).pop();
+
                           BotToast.showSimpleNotification(
                               align: Alignment.bottomCenter,
                               title: "Updated Successfully",
@@ -94,7 +84,6 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                                 color: Colors.white,
                               ));
                         } else {
-                          // showToast("Value cannot be empty");
                           BotToast.showText(text: 'Value cannot be empty');
                         }
                       },
@@ -104,12 +93,8 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                         }
                         return null;
                       },
-
                       cursorColor: blue,
-
-                      //style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                          // fillColor: green,
                           isDense: true,
                           labelText: "Food Name",
                           labelStyle: TextStyle(color: blue),
@@ -208,7 +193,6 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
           height: 20.0,
         ),
         button(food, context)
-        // buttons(context,food.id)
       ],
     ),
   );
@@ -249,41 +233,3 @@ formValid(context, food) {
     BotToast.showText(text: 'Value cannot be empty');
   }
 }
-
-// Widget buttons(context,String id){
-//   return Row(
-//     mainAxisAlignment: MainAxisAlignment.center,
-//     children: [
-//       RaisedButton(
-//           child: Text(
-//             'CANCEL',
-//             style: TextStyle(color: blue),
-//           ),
-//           onPressed: () {
-//             Navigator.pop(context);
-//           }),
-//           SizedBox(width: 10.0,),
-//       RaisedButton(
-//           child: Text(
-//             'UPDATE',
-//             style: TextStyle(color: blue),
-//           ),
-//           onPressed: () {
-//             if (_formKeyTwo.currentState.validate()) {
-//               _formKeyTwo.currentState.save();
-//               //createRecord();
-//               // print(_updatemMovieName.text);
-//               //  MovieService().updateData(id,_updatemMovieName.text);
-//               // showToast("Movie Updated successfully",
-//               //     animation: StyledToastAnimation.slideFromBottomFade,
-//               //     context: context,
-//               //     backgroundColor: Colors.black);
-
-//               // Navigator.pop(context);
-//               //  _updatemMovieName.clear();
-//               // _updatemMovieName.clear();
-//             }
-//           })
-//     ],
-//   );
-// }

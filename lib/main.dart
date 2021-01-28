@@ -97,8 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     this._outputController = TextEditingController();
-     FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    FlutterStatusbarcolor.setStatusBarColor(Colors.white);
+    //  FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
+    // FlutterStatusbarcolor.setStatusBarColor(Colors.white);
   }
 
 
@@ -327,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
         .deleteRecord(id);
     BotToast.showSimpleNotification(
-        title: "${food.get("foodName")} deleted",
+        title: "${getDecText(food.get("foodName"))} deleted",
         align: Alignment.bottomCenter,
         backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
         titleStyle: TextStyle(color: Colors.white),
@@ -505,7 +505,8 @@ class _HomeScreenState extends State<HomeScreen> {
 //new tasks
 //add to db - scroll to index nut work with aniamted list -> done
 // updating quanitty of existing item hightlight it
-//encrypt data
+//encrypt data -> done
+//fix statusbarcolor
 //Google sign in and intro screen -> done
 //user logout and clean code -> done
 //deploy to ustsavized :)
