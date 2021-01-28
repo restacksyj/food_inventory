@@ -1,17 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
-// import 'dart:html';
+
 import 'package:bot_toast/bot_toast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:food_inventory/login_screen.dart';
-import 'package:food_inventory/models/food_model.dart';
 import 'package:food_inventory/services/databse_service.dart';
 import 'package:food_inventory/services/encryption.dart';
 import 'package:food_inventory/update_modal.dart';
@@ -22,24 +18,18 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:intl/intl.dart';
-import 'package:scroll_to_index/scroll_to_index.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:search_page/search_page.dart';
+import 'package:rxdart/subjects.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+final Color pink = Color.fromRGBO(222, 110, 131, 1.0);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-
   // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   runApp(MyApp());
 }
-
-
-
 
 class MyApp extends StatefulWidget {
   @override
@@ -47,16 +37,14 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
-
   String auth;
 
-  void initState(){
+  void initState() {
     super.initState();
     getPrefs();
   }
 
-  getPrefs()async{
+  getPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final user = prefs.getString("authId");
 
@@ -68,16 +56,13 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      builder: BotToastInit(), //1. call BotToastInit
+      builder: BotToastInit(),
       navigatorObservers: [BotToastNavigatorObserver()],
       debugShowCheckedModeBanner: false,
-      home: auth== null ? LoginScreen():HomeScreen(),
+      home: auth == null ? LoginScreen() : HomeScreen(),
     );
   }
 }
-
-
-
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -85,38 +70,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  TextEditingController _outputController;
   String returnedBarc = "";
   final _key = GlobalKey<AnimatedListState>();
   ScrollController _controller = ScrollController();
-   int highlightIndex = 0;
-   Color currentColor = Color.fromRGBO(109, 97, 231, 1.0);
-    ItemController c = Get.put(ItemController());
-     Encryption encryption = Encryption();
+  Encryption encryption = Encryption();
+  BehaviorSubject<int> scrolledIndex = BehaviorSubject<int>();
 
   void initState() {
     super.initState();
-    this._outputController = TextEditingController();
     //  FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
     // FlutterStatusbarcolor.setStatusBarColor(Colors.white);
   }
 
-
-
-
-  // encryptData(String text) {
-  //   final key = encrypt.Key.fromSecureRandom(32);
-  //   final iv = encrypt.IV.fromLength(16);
-
-  //   final encrypter = encrypt.Encrypter(encrypt.AES(key));
-
-  //   final encrypted = encrypter.encrypt(text, iv: iv);
-  //   final decrypted = encrypter.decrypt(encrypted, iv: iv);
-
-  //   print(decrypted); // Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  //   print(encrypted
-  //       .base16); // R4PxiU3h8YoIRqVowBXm36ZcCeNeZ4s1OvVBTfFlZRdmohQqOpPQqD1YecJeZMAop/hZ4OxqgC1WtwvX/hP9mw==
-  // }
+  void dispose() {
+    super.dispose();
+    scrolledIndex.close();
+  }
 
   Future _scan() async {
     await Permission.camera.request();
@@ -128,7 +97,6 @@ class _HomeScreenState extends State<HomeScreen> {
           animationDuration: Duration(milliseconds: 300));
       print('nothing return.');
     } else {
-      this._outputController.text = barcode;
       setState(() {
         returnedBarc = barcode;
       });
@@ -136,13 +104,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        floatingActionButton: FloatingActionButton(
+        floatingActionButtonLocation:
+            FloatingActionButtonLocation.miniCenterFloat,
+        floatingActionButton: FloatingActionButton.extended(
+          tooltip: "Scan",
+          icon: Icon(Icons.qr_code_scanner),
+          label: Text("Scan"),
           onPressed: () => _scan(),
-          child: Icon(Icons.camera_alt),
           backgroundColor: Color.fromRGBO(222, 110, 131, 1.0),
         ),
         body: bodyView());
@@ -180,30 +151,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   InkWell(
-                    onTap: () { 
-                      
+                    onTap: () {
                       Get.defaultDialog(
-                        middleText: "Are you sure ?",
-                        title: "Logout",
-                        radius: 10.0,
-                        buttonColor: Color.fromRGBO(109, 97, 231, 1.0),
-                        cancelTextColor: Colors.black,
-                        confirmTextColor: Colors.white,
-                        
-                      onConfirm: ()async{
-                        GoogleSignIn().signOut();
-                      FirebaseAuth.instance.signOut();
-                      final prefs = await SharedPreferences.getInstance();
-                      prefs.clear();
-                      Get.offAll(LoginScreen(), transition: Transition.cupertino);
-                      },
-                      onCancel: () => Navigator.pop(context)
-                      
-                      );
-                      
-                      },
+                          middleText: "Are you sure ?",
+                          title: "Logout",
+                          radius: 10.0,
+                          buttonColor: Color.fromRGBO(109, 97, 231, 1.0),
+                          cancelTextColor: Colors.black,
+                          confirmTextColor: Colors.white,
+                          onConfirm: () async {
+                            GoogleSignIn().signOut();
+                            FirebaseAuth.instance.signOut();
+                            final prefs = await SharedPreferences.getInstance();
+                            prefs.clear();
+                            Get.offAll(LoginScreen(),
+                                transition: Transition.cupertino);
+                          },
+                          onCancel: () => Navigator.pop(context));
+                    },
                     child: Icon(
-                      Icons.account_box_outlined,
+                      Icons.logout,
                       size: 30.0,
                     ),
                   )
@@ -213,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(
               height: 10.0,
             ),
-           Expanded(child: listView())
+            Expanded(child: listView())
           ],
         ),
       ),
@@ -237,17 +204,19 @@ class _HomeScreenState extends State<HomeScreen> {
             if (items.length == 0) {
               return noItems();
             } else {
-              return AnimatedList(
-                  controller: _controller,
-                  key: _key,
-                  padding: EdgeInsets.all(10.0),
-                  itemBuilder: (context, int index, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: foodItem(items[index], index),
-                    );
-                  },
-                  initialItemCount: items.length);
+              return Scrollbar(
+                child: AnimatedList(
+                    controller: _controller,
+                    key: _key,
+                    padding: EdgeInsets.all(10.0),
+                    itemBuilder: (context, int index, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: foodItem(items[index], index),
+                      );
+                    },
+                    initialItemCount: items.length),
+              );
             }
           }
 
@@ -256,25 +225,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _goToElement(int index) {
+    scrolledIndex.add(index);
+
     _controller.animateTo(
-        (74.0 *
+        (100.0 *
             index), // 100 is the height of container and index of 6th element is 5
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOut);
+    Future.delayed(Duration(milliseconds: 1500), () {
+      scrolledIndex.add(null);
+    });
   }
 
-  changeItemColor(){
-     Timer(Duration(seconds: 0),(){
-          setState(() {
-            currentColor = Colors.deepOrange;
-          });
-        });
-        setState(() {
-          currentColor = Color.fromRGBO(109, 97, 231, 1.0);
-        });
-  }
-
-  getDecText(text){
+  getDecText(text) {
     return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
   }
 
@@ -299,11 +262,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } else {
       _goToElement(data["indexOfItem"]);
-      c.setIndex(data["indexOfItem"]);
-      // setState(() {
-      //   highlightIndex = data["indexOfItem"];
-      // });
-     // changeItemColor();
     }
   }
 
@@ -358,89 +316,102 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget foodItem(QueryDocumentSnapshot food, int index) {
-  
-    return InkWell(
-      onLongPress: () => showUpdateModal(context, food),
-      onDoubleTap: () => deleteFromDB(food, food.id, index),
-      child: Container(
-        padding: EdgeInsets.all(10.0),
-        margin: EdgeInsets.all(3.0),
-        decoration: BoxDecoration(
-            color: index == highlightIndex ? currentColor:Color.fromRGBO(109, 97, 231, 1.0),
-            borderRadius: BorderRadius.all(Radius.circular(5.0))),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                food.get("foodName").toString().contains("Loading name..")
-                    ? Shimmer.fromColors(
-                        baseColor: Colors.grey[300],
-                        highlightColor: Colors.grey[100],
-                        child: Text(
-                         
-                          food
-                              .get("foodName")
-                              .toString()
-                              .split(" ")
-                              .take(5)
-                              .join(" "),
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.white, fontSize: 16.0),
-                        ),
-                      )
-                    : Text(
-                       getDecText(food
-                            .get("foodName"))
-                            .toString()
-                            .split(" ")
-                            .take(5)
-                            .join(" "),
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.white, fontSize: 16.0),
+    return StreamBuilder<Object>(
+        stream: scrolledIndex,
+        builder: (context, snapshotTwo) {
+          return InkWell(
+            onTap: () => showUpdateModal(context, food),
+            onDoubleTap: () => deleteFromDB(food, food.id, index),
+            child: Container(
+              padding: EdgeInsets.all(10.0),
+              margin: EdgeInsets.all(3.0),
+              decoration: BoxDecoration(
+                  color: index == scrolledIndex.value
+                      ? Colors.orange
+                      : Color.fromRGBO(109, 97, 231, 1.0),
+                  borderRadius: BorderRadius.all(Radius.circular(5.0))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      food.get("foodName").toString().contains("Loading name..")
+                          ? Shimmer.fromColors(
+                              baseColor: Colors.grey[300],
+                              highlightColor: Colors.grey[100],
+                              child: Text(
+                                food
+                                    .get("foodName")
+                                    .toString()
+                                    .split(" ")
+                                    .take(5)
+                                    .join(" "),
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16.0),
+                              ),
+                            )
+                          : SizedBox(
+                                width: 200.0,
+                                child: SingleChildScrollView(
+                               
+                                  scrollDirection: Axis.horizontal,
+                                  child: Text(
+                                    getDecText(food.get("foodName"))
+                                        ,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 16.0),
+                                  ),
+                                ),
+                              ),
+                      RichText(
+                        text: TextSpan(children: [
+                          TextSpan(
+                              text: 'Qty: ',
+                              style: TextStyle(color: Colors.white)),
+                          TextSpan(
+                              text: food.get("qty").toString(),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                        ]),
                       ),
-                RichText(
-                  text: TextSpan(children: [
-                    TextSpan(
-                        text: 'Qty: ', style: TextStyle(color: Colors.white)),
-                    TextSpan(
-                        text: food.get("qty").toString(),
+                      // Text('Qty: ${food.get("qty").toString()}',
+                      //     style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 5.0,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        getDecText(food.id),
                         style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
-                  ]),
-                ),
-                // Text('Qty: ${food.get("qty").toString()}',
-                //     style: TextStyle(color: Colors.white)),
-              ],
+                            fontSize: 12.0,
+                            color: Color.fromRGBO(255, 255, 255, 0.7)),
+                      ),
+                      Text(
+                        "${DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(food.get("date")))}",
+                        style: TextStyle(
+                            fontSize: 12.0,
+                            color: Color.fromRGBO(255, 255, 255, 0.7)),
+                      )
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10.0,
+                  )
+                ],
+              ),
             ),
-            SizedBox(
-              height: 5.0,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  getDecText(food.id),
-                  style: TextStyle(
-                      fontSize: 12.0,
-                      color: Color.fromRGBO(255, 255, 255, 0.7)),
-                ),
-                Text(
-                  "${DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(food.get("date")))}",
-                  style: TextStyle(
-                      fontSize: 12.0,
-                      color: Color.fromRGBO(255, 255, 255, 0.7)),
-                )
-              ],
-            ),
-            SizedBox(
-              height: 10.0,
-            )
-          ],
-        ),
-      ),
-    );
+          );
+        });
   }
 
 //   showSearchPage()async{
@@ -504,19 +475,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 //new tasks
 //add to db - scroll to index nut work with aniamted list -> done
-// updating quanitty of existing item hightlight it
+// updating quanitty of existing item by hightlighting it -> done
 //encrypt data -> done
-//fix statusbarcolor
+//fix statusbarcolor -> done
 //Google sign in and intro screen -> done
 //user logout and clean code -> done
 //deploy to ustsavized :)
-
-
-class ItemController extends GetxController{
-  RxInt highIndex = 0.obs;
-
-  setIndex(int index){
-    highIndex.value = index;
-    update();
-  }
-}
