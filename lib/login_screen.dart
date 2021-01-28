@@ -2,23 +2,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:food_inventory/main.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_login/flutter_login.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:delayed_display/delayed_display.dart';
 import 'package:sign_button/sign_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
-const users = const {
-  'dribbble@gmail.com': '12345',
-  'hunter@gmail.com': 'hunter',
-};
+
 
 class LoginScreen extends StatelessWidget {
   Duration get loginTime => Duration(milliseconds: 2250);
-
+  final storage =  FlutterSecureStorage();
   Future<User> googleSignin() async {
     print('i cam ');
     User currentUser;
@@ -31,51 +30,53 @@ class LoginScreen extends StatelessWidget {
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      final user = await FirebaseAuth.instance.signInWithCredential(credential);
-      assert(user.user.email != null);
-      assert(user.user.displayName != null);
-      assert(!user.user.isAnonymous);
-      assert(await user.user.getIdToken() != null);
-      currentUser = await FirebaseAuth.instance.currentUser;
-      assert(user.user.uid == currentUser.uid);
+      final auth = await FirebaseAuth.instance.signInWithCredential(credential);
+      assert(auth.user.email != null);
+      assert(auth.user.displayName != null);
+      assert(!auth.user.isAnonymous);
+      assert(await auth.user.getIdToken() != null);
+      currentUser = FirebaseAuth.instance.currentUser;
+      assert(auth.user.uid == currentUser.uid);
+      savePrefs(auth.user.uid);
+      
+      if( await storage.read(key: "encrypted") != "true" ){
+
+        setKeyIV();
+      }else{
+        final key =  await storage.read(key: "encryptKey");
+        print(key);
+      }
+      
+      
       Get.offAll(HomeScreen(), transition: Transition.cupertino);
-      print(currentUser);
-      print("User Name : ${currentUser.displayName}");
     } catch (e) {
       print(e);
       return currentUser;
     }
   }
 
-  Future<void> signOutGoogle() async {
-    await GoogleSignIn().signOut();
+  // Future<void> signOutGoogle() async {
+  //   await GoogleSignIn().signOut();
 
-    print("User Signed Out");
+  //   print("User Signed Out");
+  // }
+
+  savePrefs(String value)async{
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString("authId", value);
   }
 
-  Future<String> _authUser(LoginData data) async {
-    print('Name: ${data.name}, Password: ${data.password}');
-    await googleSignin();
-    // return Future.delayed(loginTime).then((_) {
-    //   if (!users.containsKey(data.name)) {
-    //     return 'Username not exists';
-    //   }
-    //   if (users[data.name] != data.password) {
-    //     return 'Password does not match';
-    //   }
-    //   return null;
-    // });
+  setKeyIV()async{
+    
+    final key = encrypt.Key.fromSecureRandom(32);
+    final iv = encrypt.IV.fromLength(16);
+
+    await storage.write(key: "encryptKey", value: key.base64);
+    await storage.write(key: "IV", value: iv.base64);
+   await storage.write(key: "encrypted", value: "true");
+
   }
 
-  Future<String> _recoverPassword(String name) {
-    print('Name: $name');
-    return Future.delayed(loginTime).then((_) {
-      if (!users.containsKey(name)) {
-        return 'Username not exists';
-      }
-      return null;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {

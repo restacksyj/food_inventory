@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 // import 'dart:html';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,8 +13,10 @@ import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:food_inventory/login_screen.dart';
 import 'package:food_inventory/models/food_model.dart';
 import 'package:food_inventory/services/databse_service.dart';
+import 'package:food_inventory/services/encryption.dart';
 import 'package:food_inventory/update_modal.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
@@ -22,27 +25,59 @@ import 'package:intl/intl.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:search_page/search_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
   // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+
+
+
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+
+
+  String auth;
+
+  void initState(){
+    super.initState();
+    getPrefs();
+  }
+
+  getPrefs()async{
+    final prefs = await SharedPreferences.getInstance();
+    final user = prefs.getString("authId");
+
+    setState(() {
+      auth = user;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       builder: BotToastInit(), //1. call BotToastInit
       navigatorObservers: [BotToastNavigatorObserver()],
       debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
+      home: auth== null ? LoginScreen():HomeScreen(),
     );
   }
 }
+
+
+
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -57,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
    int highlightIndex = 0;
    Color currentColor = Color.fromRGBO(109, 97, 231, 1.0);
     ItemController c = Get.put(ItemController());
+     Encryption encryption = Encryption();
 
   void initState() {
     super.initState();
@@ -65,19 +101,22 @@ class _HomeScreenState extends State<HomeScreen> {
     FlutterStatusbarcolor.setStatusBarColor(Colors.white);
   }
 
-  encryptData(String text) {
-    final key = encrypt.Key.fromUtf8('my 32 length key................');
-    final iv = encrypt.IV.fromLength(16);
 
-    final encrypter = encrypt.Encrypter(encrypt.AES(key));
 
-    final encrypted = encrypter.encrypt(text, iv: iv);
-    final decrypted = encrypter.decrypt(encrypted, iv: iv);
 
-    print(decrypted); // Lorem ipsum dolor sit amet, consectetur adipiscing elit
-    print(encrypted
-        .base16); // R4PxiU3h8YoIRqVowBXm36ZcCeNeZ4s1OvVBTfFlZRdmohQqOpPQqD1YecJeZMAop/hZ4OxqgC1WtwvX/hP9mw==
-  }
+  // encryptData(String text) {
+  //   final key = encrypt.Key.fromSecureRandom(32);
+  //   final iv = encrypt.IV.fromLength(16);
+
+  //   final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+  //   final encrypted = encrypter.encrypt(text, iv: iv);
+  //   final decrypted = encrypter.decrypt(encrypted, iv: iv);
+
+  //   print(decrypted); // Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  //   print(encrypted
+  //       .base16); // R4PxiU3h8YoIRqVowBXm36ZcCeNeZ4s1OvVBTfFlZRdmohQqOpPQqD1YecJeZMAop/hZ4OxqgC1WtwvX/hP9mw==
+  // }
 
   Future _scan() async {
     await Permission.camera.request();
@@ -100,7 +139,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-   
     return Scaffold(
         floatingActionButton: FloatingActionButton(
           onPressed: () => _scan(),
@@ -142,7 +180,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   InkWell(
-                    onTap: () => null,
+                    onTap: () { 
+                      
+                      Get.defaultDialog(
+                        middleText: "Are you sure ?",
+                        title: "Logout",
+                        radius: 10.0,
+                        buttonColor: Color.fromRGBO(109, 97, 231, 1.0),
+                        cancelTextColor: Colors.black,
+                        confirmTextColor: Colors.white,
+                        
+                      onConfirm: ()async{
+                        GoogleSignIn().signOut();
+                      FirebaseAuth.instance.signOut();
+                      final prefs = await SharedPreferences.getInstance();
+                      prefs.clear();
+                      Get.offAll(LoginScreen(), transition: Transition.cupertino);
+                      },
+                      onCancel: () => Navigator.pop(context)
+                      
+                      );
+                      
+                      },
                     child: Icon(
                       Icons.account_box_outlined,
                       size: 30.0,
@@ -213,6 +272,10 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           currentColor = Color.fromRGBO(109, 97, 231, 1.0);
         });
+  }
+
+  getDecText(text){
+    return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
   }
 
   addToDb() async {
@@ -295,6 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget foodItem(QueryDocumentSnapshot food, int index) {
+  
     return InkWell(
       onLongPress: () => showUpdateModal(context, food),
       onDoubleTap: () => deleteFromDB(food, food.id, index),
@@ -315,6 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         baseColor: Colors.grey[300],
                         highlightColor: Colors.grey[100],
                         child: Text(
+                         
                           food
                               .get("foodName")
                               .toString()
@@ -326,8 +391,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     : Text(
-                        food
-                            .get("foodName")
+                       getDecText(food
+                            .get("foodName"))
                             .toString()
                             .split(" ")
                             .take(5)
@@ -356,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  food.id,
+                  getDecText(food.id),
                   style: TextStyle(
                       fontSize: 12.0,
                       color: Color.fromRGBO(255, 255, 255, 0.7)),
@@ -442,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
 // updating quanitty of existing item hightlight it
 //encrypt data
 //Google sign in and intro screen -> done
-//user logout and clean code
+//user logout and clean code -> done
 //deploy to ustsavized :)
 
 

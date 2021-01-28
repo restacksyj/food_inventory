@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:food_inventory/models/food_model.dart';
 import 'package:food_inventory/services/databse_service.dart';
+import 'package:food_inventory/services/encryption.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 final GlobalKey<FormState> _formKeyTwo = GlobalKey<FormState>();
 final TextEditingController _updateFoodName = TextEditingController();
@@ -14,8 +16,13 @@ final TextEditingController _updateFoodQty = TextEditingController();
 final Color blue = Color.fromRGBO(109, 97, 231, 1.0);
 final Color pink = Color.fromRGBO(222, 110, 131, 1.0);
 
+getDecText(text){
+    return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
+  }
+
 showUpdateModal(BuildContext context, QueryDocumentSnapshot food) {
-  _updateFoodName.text = food.get("foodName");
+  _updateFoodName.text = Encryption.decryptText(
+      encrypt.Encrypted.fromBase64(food.get("foodName")));
   _updateFoodQty.text = food.get("qty").toString();
   return showMaterialModalBottomSheet(
     // expand: true,
@@ -26,17 +33,20 @@ showUpdateModal(BuildContext context, QueryDocumentSnapshot food) {
         borderRadius: BorderRadius.only(
             topLeft: Radius.circular(25.0), topRight: Radius.circular(25.0))),
     context: context,
-    
-    builder: (context) => WillPopScope(child: modalBody(context, food),onWillPop: ()async=>true,),
+
+    builder: (context) => WillPopScope(
+      child: modalBody(context, food),
+      onWillPop: () async => true,
+    ),
   );
 }
 
 Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
   return Container(
     padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom ,
-        ),
-   height: MediaQuery.of(context).size.height / 1.2,
+      bottom: MediaQuery.of(context).viewInsets.bottom,
+    ),
+    height: MediaQuery.of(context).size.height / 1.2,
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -72,13 +82,20 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                         // print("onfield");
                         if (value.isNotEmpty) {
                           // MovieService().updateData(movie.id,value);
-                          formValid(context,food);
+                          formValid(context, food);
                           // Navigator.of(context).pop();
                           BotToast.showSimpleNotification(
-                              align: Alignment.bottomCenter,title: "Updated Successfully",backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),titleStyle: TextStyle(color: Colors.white),closeIcon: Icon(Icons.close,color: Colors.white,)); 
+                              align: Alignment.bottomCenter,
+                              title: "Updated Successfully",
+                              backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
+                              titleStyle: TextStyle(color: Colors.white),
+                              closeIcon: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ));
                         } else {
                           // showToast("Value cannot be empty");
-                           BotToast.showText(text: 'Value cannot be empty');
+                          BotToast.showText(text: 'Value cannot be empty');
                         }
                       },
                       validator: (String value) {
@@ -87,7 +104,7 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                         }
                         return null;
                       },
-                      
+
                       cursorColor: blue,
 
                       //style: TextStyle(color: Colors.white),
@@ -100,7 +117,6 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                           filled: true,
                           hintText: "Food item",
                           hintStyle: TextStyle(color: Colors.black),
-                          
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.0),
                             borderSide: BorderSide(
@@ -128,23 +144,28 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                     child: TextFormField(
                       controller: _updateFoodQty,
                       cursorColor: blue,
-                        onFieldSubmitted: (value) {
+                      onFieldSubmitted: (value) {
                         // print("onfield");
                         if (value.isNotEmpty) {
-                          formValid(context,food);
+                          formValid(context, food);
                           // MovieService().updateData(movie.id,value);
                           // Navigator.of(context).pop();
                           BotToast.showSimpleNotification(
-                              align: Alignment.bottomCenter,title: "Updated Successfully",backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),titleStyle: TextStyle(color: Colors.white),closeIcon: Icon(Icons.close,color: Colors.white,)); 
+                              align: Alignment.bottomCenter,
+                              title: "Updated Successfully",
+                              backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
+                              titleStyle: TextStyle(color: Colors.white),
+                              closeIcon: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ));
                         } else {
                           // showToast("Value cannot be empty");
                           BotToast.showText(text: 'Value cannot be empty');
                         }
                       },
                       // initialValue: food.get("qty").toString(),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       keyboardType: TextInputType.number,
                       validator: (String value) {
                         if (num.parse(value) == 0 ||
@@ -186,35 +207,47 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
         SizedBox(
           height: 20.0,
         ),
-        button(food,context)
+        button(food, context)
         // buttons(context,food.id)
       ],
-      
     ),
   );
 }
 
-
-Widget button(QueryDocumentSnapshot food,context){
+Widget button(QueryDocumentSnapshot food, context) {
   return RaisedButton(
     elevation: 0.0,
     color: blue,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0)),
-    onPressed: ()=>formValid(context,food), child: Text("Done",style: TextStyle(color: Colors.white),),padding: EdgeInsets.all(16.0),);
+    onPressed: () => formValid(context, food),
+    child: Text(
+      "Done",
+      style: TextStyle(color: Colors.white),
+    ),
+    padding: EdgeInsets.all(16.0),
+  );
 }
 
-formValid(context,food){
-  if (_formKeyTwo.currentState.validate()){
-              _formKeyTwo.currentState.save();
-              DatabaseService(uid:FirebaseAuth.instance.currentUser.uid).updateFoodItem(foodName: _updateFoodName.text,barcode: food.id,qty: int.parse(_updateFoodQty.text));
-              Navigator.of(context).pop();
-              BotToast.showSimpleNotification(
-                align: Alignment.bottomCenter,
-                title: "Updated Successfully",backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),titleStyle: TextStyle(color: Colors.white),closeIcon: Icon(Icons.close,color: Colors.white,)); 
-
-              }else{
-                 BotToast.showText(text: 'Value cannot be empty');
-              }
+formValid(context, food) {
+  if (_formKeyTwo.currentState.validate()) {
+    _formKeyTwo.currentState.save();
+    DatabaseService(uid: FirebaseAuth.instance.currentUser.uid).updateFoodItem(
+        foodName: _updateFoodName.text,
+        barcode: food.id,
+        qty: int.parse(_updateFoodQty.text));
+    Navigator.of(context).pop();
+    BotToast.showSimpleNotification(
+        align: Alignment.bottomCenter,
+        title: "Updated Successfully",
+        backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
+        titleStyle: TextStyle(color: Colors.white),
+        closeIcon: Icon(
+          Icons.close,
+          color: Colors.white,
+        ));
+  } else {
+    BotToast.showText(text: 'Value cannot be empty');
+  }
 }
 
 // Widget buttons(context,String id){

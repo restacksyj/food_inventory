@@ -39,7 +39,6 @@ dependencies:
   cloud_firestore: ^0.16.0
   firebase_auth: ^0.20.0+1
   google_sign_in: ^4.5.9
-  flutter_login: ^1.0.14
   firebase_core: ^0.7.0
   flutter_statusbarcolor: ^0.2.3
   modal_bottom_sheet: ^1.0.0+1
@@ -51,6 +50,7 @@ dependencies:
   delayed_display: ^1.1.0
   sign_button: ^1.0.1
   shared_preferences: ^0.5.12+4
+  flutter_secure_storage: ^3.3.5
 
 dev_dependencies:
   flutter_test:
