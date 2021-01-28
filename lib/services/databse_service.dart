@@ -20,7 +20,8 @@ class DatabaseService {
 
 
   encBarc(String barcode){
-    return Encryption.encryptText(barcode).base64;
+    final encStr =  Encryption.encryptText(barcode).base64;
+    return encStr.replaceAll("/","*");
   }
 
 
@@ -42,7 +43,7 @@ class DatabaseService {
         .orderBy("date", descending: false)
         .get();
     data["nofOfItems"] = res.docs.length;
-    data["indexOfItem"] = res.docs.indexWhere((element) => element.id == id);
+    data["indexOfItem"] = res.docs.indexWhere((element) => element.id == encBarc(id));
     print(data["indexOfItem"]);
     return data;
   }

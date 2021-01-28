@@ -22,8 +22,9 @@ class Encryption {
     return encryptedText;
   }
 
-  static decryptText(text)  {
-    final decryptedText = _encrypter().decrypt(text, iv: iv);
+  static decryptText(encrypt.Encrypted text)  {
+    final encrypt.Encrypted incomingText = encrypt.Encrypted.fromBase64(text.base64.replaceAll("*", "/")) ;
+    final decryptedText = _encrypter().decrypt(incomingText, iv: iv);
     return decryptedText;
   }
 }
