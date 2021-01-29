@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:food_inventory/models/food_model.dart';
-import 'package:food_inventory/services/databse_service.dart';
+import 'package:food_inventory/services/database_service.dart';
 import 'package:food_inventory/services/encryption.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:bot_toast/bot_toast.dart';

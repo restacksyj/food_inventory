@@ -56,21 +56,29 @@ class DatabaseService {
 
   Future<void> createRecord(String barcode) async {
     var date = DateTime.now().millisecondsSinceEpoch;
+    var encUrl = "";
 
     try {
       await usersCollection
           .doc(uid)
           .collection("foods")
           .doc(encBarc(barcode))
-          .set(FoodModel(foodName: "Loading name..", date: date, qty: 1)
+          .set(FoodModel(
+                  foodName: "Loading name..", date: date, qty: 1, imageUrl: "")
               .toJson());
       final foodName = await foodGetter.getfoodName(barcode);
-      final enc = Encryption.encryptText(foodName);
+      final enc = Encryption.encryptText(foodName).base64;
+      final foodImgUrl = await foodGetter.getfoodImg(barcode);
+      if (foodImgUrl != null) {
+        encUrl = Encryption.encryptText(foodImgUrl).base64;
+      } else {
+        encUrl = null;
+      }
       await usersCollection
           .doc(uid)
           .collection("foods")
           .doc(encBarc(barcode))
-          .update({"foodName": enc.base64});
+          .update({"foodName": enc, "imageUrl": encUrl});
     } on SocketException {
       Get.showSnackbar(GetBar(
         title: "Failed",
@@ -128,6 +136,7 @@ class DatabaseService {
     } on Exception {
       BotToast.showText(text: "Some error occured");
     } catch (e) {
+      BotToast.showText(text: "Some error occured");
       print(e);
       rethrow;
     }
@@ -159,12 +168,13 @@ class DatabaseService {
 
   updateFoodItem({String foodName, int qty, String barcode}) async {
     try {
-      final encrypt.Encrypted encFoodName = Encryption.encryptText(foodName);
+      final  encFoodName =
+          Encryption.encryptText(foodName).base64;
       return await usersCollection
           .doc(uid)
           .collection("foods")
           .doc(barcode)
-          .update({"foodName": encFoodName.base64, "qty": qty});
+          .update({"foodName": encFoodName, "qty": qty});
     } on SocketException {
       Get.showSnackbar(GetBar(
         title: "Failed",
@@ -191,6 +201,25 @@ class GetFood extends GetConnect {
     } else {
       print("Product not found");
       return "No name";
+    }
+  }
+
+  Future<String> getfoodImg(String barcode) async {
+    final res = await get(
+        "https://world.openfoodfacts.org/api/v0/product/$barcode.json");
+    final data = res.body;
+    if (data["status"] == 1) {
+      print(data["product"]["image_small_url"].toString());
+      if (data["product"]["image_small_url"] != null) {
+        return data["product"]["image_small_url"].toString() == "null" ||
+                data["product"]["image_small_url"].toString().isEmpty
+            ? null
+            : data["product"]["image_small_url"].toString();
+      }else{
+        return null;
+      }
+    } else {
+      return null;
     }
   }
 }

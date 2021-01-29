@@ -3,7 +3,8 @@ class FoodModel{
   String foodName;
   int date;
   num qty;
-  FoodModel({this.foodName,this.date,this.qty});
+  String imageUrl;
+  FoodModel({this.foodName,this.date,this.qty,this.imageUrl});
 
 
    Map<String, dynamic> toJson() => 
@@ -11,6 +12,7 @@ class FoodModel{
     'date': this.date,
     'qty': this.qty,
     'foodName': this.foodName,
+    'imageUrl':this.imageUrl
   };
 
 

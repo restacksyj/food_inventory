@@ -7,8 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_offline/flutter_offline.dart';
 import 'package:food_inventory/login_screen.dart';
-import 'package:food_inventory/services/databse_service.dart';
+import 'package:food_inventory/services/database_service.dart';
 import 'package:food_inventory/services/encryption.dart';
 import 'package:food_inventory/update_modal.dart';
 import 'package:get/get.dart';
@@ -70,11 +71,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String returnedBarc = "";
   final _key = GlobalKey<AnimatedListState>();
   ScrollController _controller = ScrollController();
   Encryption encryption = Encryption();
   BehaviorSubject<int> scrolledIndex = BehaviorSubject<int>();
+  BehaviorSubject<String> barcodeStream = BehaviorSubject<String>();
 
   void initState() {
     super.initState();
@@ -85,6 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     super.dispose();
     scrolledIndex.close();
+    barcodeStream.close();
   }
 
   Future _scan() async {
@@ -97,22 +99,22 @@ class _HomeScreenState extends State<HomeScreen> {
           animationDuration: Duration(milliseconds: 300));
       print('nothing return.');
     } else {
-      setState(() {
-        returnedBarc = barcode;
-      });
+      barcodeStream.add(barcode);
       await addToDb();
+      Future.delayed(Duration(seconds: 1));
+      barcodeStream.add(null);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        floatingActionButtonLocation:
-            FloatingActionButtonLocation.miniCenterFloat,
-        floatingActionButton: FloatingActionButton.extended(
+        floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
+        floatingActionButton: FloatingActionButton(
           tooltip: "Scan",
-          icon: Icon(Icons.qr_code_scanner),
-          label: Text("Scan"),
+          child: Icon(Icons.qr_code_scanner),
+          //label: Container(),
+          //isExtended: false,
           onPressed: () => _scan(),
           backgroundColor: Color.fromRGBO(222, 110, 131, 1.0),
         ),
@@ -150,41 +152,70 @@ class _HomeScreenState extends State<HomeScreen> {
                       )
                     ],
                   ),
-                  InkWell(
-                    onTap: () {
-                      Get.defaultDialog(
-                          middleText: "Are you sure ?",
-                          title: "Logout",
-                          radius: 10.0,
-                          buttonColor: Color.fromRGBO(109, 97, 231, 1.0),
-                          cancelTextColor: Colors.black,
-                          confirmTextColor: Colors.white,
-                          onConfirm: () async {
-                            GoogleSignIn().signOut();
-                            FirebaseAuth.instance.signOut();
-                            final prefs = await SharedPreferences.getInstance();
-                            prefs.clear();
-                            Get.offAll(LoginScreen(),
-                                transition: Transition.cupertino);
-                          },
-                          onCancel: () => Navigator.pop(context));
-                    },
-                    child: Icon(
-                      Icons.logout,
-                      size: 30.0,
-                    ),
-                  )
+                 
+                  ButtonBar(
+                    mainAxisSize: MainAxisSize.min,
+                    alignment: MainAxisAlignment.spaceAround,
+                    buttonPadding: EdgeInsets.only(left:0.0),
+                    children: [
+                      InkWell(
+                        radius: 30.0,
+                        customBorder: CircleBorder(),
+                        onTap: () => onLogout(),
+                        child: Icon(
+                          Icons.logout,
+                          size: 30.0,
+                          
+                        ),
+                      ),
+                      SizedBox(width: 15.0,),
+                      InkWell(
+                         radius: 30.0,
+                        customBorder: CircleBorder(),
+                        onTap: ()=>null,
+                        child: Icon(Icons.search,size: 30.0,))
+                    ],
+                  ),
                 ],
               ),
             ),
             SizedBox(
               height: 10.0,
             ),
-            Expanded(child: listView())
+            Expanded(
+                child: OfflineBuilder(
+              child: listView(),
+              connectivityBuilder: (
+                context,
+                ConnectivityResult connectivity,
+                Widget child,
+              ) {
+                final bool connected = connectivity != ConnectivityResult.none;
+                return connected ? listView() : noInternet();
+              },
+            ))
           ],
         ),
       ),
     );
+  }
+
+  onLogout() {
+    return Get.defaultDialog(
+        middleText: "Are you sure ?",
+        title: "Logout",
+        radius: 10.0,
+        buttonColor: Color.fromRGBO(109, 97, 231, 1.0),
+        cancelTextColor: Colors.black,
+        confirmTextColor: Colors.white,
+        onConfirm: () async {
+          GoogleSignIn().signOut();
+          FirebaseAuth.instance.signOut();
+          final prefs = await SharedPreferences.getInstance();
+          prefs.clear();
+          Get.offAll(LoginScreen(), transition: Transition.cupertino);
+        },
+        onCancel: () => Navigator.pop(context));
   }
 
   Widget listView() {
@@ -204,18 +235,25 @@ class _HomeScreenState extends State<HomeScreen> {
             if (items.length == 0) {
               return noItems();
             } else {
-              return Scrollbar(
-                child: AnimatedList(
-                    controller: _controller,
-                    key: _key,
-                    padding: EdgeInsets.all(10.0),
-                    itemBuilder: (context, int index, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: foodItem(items[index], index),
-                      );
-                    },
-                    initialItemCount: items.length),
+              return ScrollConfiguration(
+                behavior: ScrollBehavior(),
+                child: GlowingOverscrollIndicator(
+                  color: blue,
+                  axisDirection: AxisDirection.down,
+                  child: Scrollbar(
+                    child: AnimatedList(
+                        controller: _controller,
+                        key: _key,
+                        padding: EdgeInsets.all(10.0),
+                        itemBuilder: (context, int index, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: foodItem(items[index], index),
+                          );
+                        },
+                        initialItemCount: items.length),
+                  ),
+                ),
               );
             }
           }
@@ -244,13 +282,13 @@ class _HomeScreenState extends State<HomeScreen> {
   addToDb() async {
     final ref =
         await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
-            .recordExists(returnedBarc);
+            .recordExists(barcodeStream.value);
 
     await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
-        .updateRecord(returnedBarc);
+        .updateRecord(barcodeStream.value);
     Map<String, int> data =
         await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
-            .getDataOfItems(id: returnedBarc);
+            .getDataOfItems(id: barcodeStream.value);
     if (!ref.exists) {
       int index = data["nofOfItems"];
       if (index == 1) {
@@ -295,6 +333,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
   }
 
+  Widget noInternet() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "No internet connection :/",
+          style: TextStyle(
+            color: Color.fromRGBO(0, 0, 0, 0.4),
+          ),
+        ),
+        SizedBox(
+          height: 2.0,
+        ),
+        Text("You're currently offline ",
+            style: TextStyle(color: Color.fromRGBO(0, 0, 0, 0.4)))
+      ],
+    );
+  }
+
   Widget noItems() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -312,6 +370,55 @@ class _HomeScreenState extends State<HomeScreen> {
         Text("Start adding items ",
             style: TextStyle(color: Color.fromRGBO(0, 0, 0, 0.4)))
       ],
+    );
+  }
+
+  Widget imageWidget(url) {
+    return url == null || getDecText(url) == ""
+        ? clipRRect(Center(
+            child: Icon(
+              Icons.close,
+              size: 35.0,
+            ),
+          ))
+        : clipRRect(Image.network(
+            getDecText(url),
+            loadingBuilder: (BuildContext context, Widget child,
+                ImageChunkEvent loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                  child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes
+                    : null,
+                valueColor: AlwaysStoppedAnimation<Color>(pink),
+              ));
+            },
+            errorBuilder: (context, _, __) {
+              return clipRRect(Center(
+                child: Icon(
+                  Icons.close,
+                  size: 35.0,
+                ),
+              ));
+            },
+            width: 75.0,
+            height: 75.0,
+            fit: BoxFit.fill,
+          ));
+    //  CachedNetworkImage(
+  }
+
+  ClipRRect clipRRect(Widget widget) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(5.0),
+      child: Container(
+        color: Colors.grey,
+        width: 75.0,
+        height: 75.0,
+        child: widget,
+      ),
     );
   }
 
@@ -335,78 +442,103 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      food.get("foodName").toString().contains("Loading name..")
-                          ? Shimmer.fromColors(
-                              baseColor: Colors.grey[300],
-                              highlightColor: Colors.grey[100],
-                              child: Text(
-                                food
+                      imageWidget(food.get("imageUrl")),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            food
                                     .get("foodName")
                                     .toString()
-                                    .split(" ")
-                                    .take(5)
-                                    .join(" "),
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 16.0),
-                              ),
-                            )
-                          : SizedBox(
-                                width: 200.0,
-                                child: SingleChildScrollView(
-                               
-                                  scrollDirection: Axis.horizontal,
-                                  child: Text(
-                                    getDecText(food.get("foodName"))
-                                        ,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 16.0),
+                                    .contains("Loading name..")
+                                ? SizedBox(
+                                    width: 200.0,
+                                    child: Shimmer.fromColors(
+                                      baseColor: Colors.grey[300],
+                                      highlightColor: Colors.grey[100],
+                                      child: Text(
+                                        food.get("foodName"),
+                                        // .toString()
+                                        // .split(" ")
+                                        // .take(5)
+                                        // .join(" "),
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16.0),
+                                      ),
+                                    ),
+                                  )
+                                : SizedBox(
+                                    width: 200.0,
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Text(
+                                        getDecText(food.get("foodName")),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16.0),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                      RichText(
-                        text: TextSpan(children: [
-                          TextSpan(
-                              text: 'Qty: ',
-                              style: TextStyle(color: Colors.white)),
-                          TextSpan(
-                              text: food.get("qty").toString(),
+                            SizedBox(
+                              height: 2.0,
+                            ),
+                            RichText(
+                              text: TextSpan(children: [
+                                TextSpan(
+                                    text: 'Qty: ',
+                                    style: TextStyle(color: Colors.white)),
+                                TextSpan(
+                                    text: food.get("qty").toString(),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold)),
+                              ]),
+                            ),
+                            SizedBox(
+                              height: 4.0,
+                            ),
+                            Text(
+                              getDecText(food.id),
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                        ]),
+                                  fontSize: 12.0,
+                                  color: Color.fromRGBO(255, 255, 255, 0.7)),
+                            ),
+                            SizedBox(
+                              height: 2.0,
+                            ),
+                            Text(
+                              "${DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(food.get("date")))}",
+                              style: TextStyle(
+                                  fontSize: 12.0,
+                                  color: Color.fromRGBO(255, 255, 255, 0.7)),
+                            )
+                          ],
+                        ),
                       ),
-                      // Text('Qty: ${food.get("qty").toString()}',
-                      //     style: TextStyle(color: Colors.white)),
                     ],
                   ),
                   SizedBox(
                     height: 5.0,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        getDecText(food.id),
-                        style: TextStyle(
-                            fontSize: 12.0,
-                            color: Color.fromRGBO(255, 255, 255, 0.7)),
-                      ),
-                      Text(
-                        "${DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(food.get("date")))}",
-                        style: TextStyle(
-                            fontSize: 12.0,
-                            color: Color.fromRGBO(255, 255, 255, 0.7)),
-                      )
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10.0,
-                  )
+
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //   children: [
+
+                  //   ],
+                  // ),
+                  // SizedBox(
+                  //   height: 10.0,
+                  // )
                 ],
               ),
             ),
@@ -471,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
 //edit quantity and name - form and api - done
 //ftech names from API - done
 //mention bought on ui - done
-//highlighting when increasing qty
+//highlighting when increasing qty -> done
 
 //new tasks
 //add to db - scroll to index nut work with aniamted list -> done
@@ -481,3 +613,8 @@ class _HomeScreenState extends State<HomeScreen> {
 //Google sign in and intro screen -> done
 //user logout and clean code -> done
 //deploy to ustsavized :)
+
+//last tasks
+//getImage and chnage layout of foodTile -> done (partially)
+//add search
+//done , no more this is it
