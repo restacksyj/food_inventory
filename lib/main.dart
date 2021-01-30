@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:bot_toast/bot_toast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,11 +8,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_offline/flutter_offline.dart';
 import 'package:food_inventory/login_screen.dart';
+import 'package:food_inventory/search_page.dart';
 import 'package:food_inventory/services/database_service.dart';
 import 'package:food_inventory/services/encryption.dart';
 import 'package:food_inventory/update_modal.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
@@ -56,11 +57,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      builder: BotToastInit(),
-      navigatorObservers: [BotToastNavigatorObserver()],
-      debugShowCheckedModeBanner: false,
-      home: auth == null ? LoginScreen() : HomeScreen(),
+    return OverlaySupport(
+          child: GetMaterialApp(
+            theme: ThemeData(fontFamily: "Manrope"),
+        debugShowCheckedModeBanner: false,
+        home: auth == null ? LoginScreen() : HomeScreen(),
+      ),
     );
   }
 }
@@ -121,6 +123,25 @@ class _HomeScreenState extends State<HomeScreen> {
         body: bodyView());
   }
 
+  // Widget sliverView(){
+  //   return CustomScrollView(
+  //     slivers: [
+  //       SliverAppBar(
+  //         expandedHeight: 100.0,
+
+  //         floating: false,
+  //         pinned: true,
+  //         flexibleSpace: FlexibleSpaceBar(),
+  //         title: Text("Inventory"),
+  //       ),
+  //       SliverFillRemaining(
+
+  //         child:listView() ,
+  //       )
+  //     ],
+  //   );
+  // }
+
   Widget bodyView() {
     return SafeArea(
       top: true,
@@ -136,46 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Hi ,${FirebaseAuth.instance.currentUser.displayName.split(" ").first} ",
-                        style: TextStyle(
-                            fontSize: 24.0, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        "Manage your inventory here",
-                        style: TextStyle(
-                            fontSize: 15.0,
-                            color: Color.fromRGBO(0, 0, 0, 0.6)),
-                      )
-                    ],
-                  ),
-                 
-                  ButtonBar(
-                    mainAxisSize: MainAxisSize.min,
-                    alignment: MainAxisAlignment.spaceAround,
-                    buttonPadding: EdgeInsets.only(left:0.0),
-                    children: [
-                      InkWell(
-                        radius: 30.0,
-                        customBorder: CircleBorder(),
-                        onTap: () => onLogout(),
-                        child: Icon(
-                          Icons.logout,
-                          size: 30.0,
-                          
-                        ),
-                      ),
-                      SizedBox(width: 15.0,),
-                      InkWell(
-                         radius: 30.0,
-                        customBorder: CircleBorder(),
-                        onTap: ()=>null,
-                        child: Icon(Icons.search,size: 30.0,))
-                    ],
-                  ),
+                  appbarText(),
+                  buttonBar(),
                 ],
               ),
             ),
@@ -197,6 +180,52 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  ButtonBar buttonBar() {
+    return ButtonBar(
+      mainAxisSize: MainAxisSize.min,
+      alignment: MainAxisAlignment.spaceAround,
+      buttonPadding: EdgeInsets.only(left: 0.0),
+      children: [
+        InkWell(
+          radius: 30.0,
+          customBorder: CircleBorder(),
+          onTap: () => onLogout(),
+          child: Icon(
+            Icons.logout,
+            size: 30.0,
+          ),
+        ),
+        SizedBox(
+          width: 15.0,
+        ),
+        InkWell(
+            radius: 30.0,
+            customBorder: CircleBorder(),
+            onTap: () => Get.to(SearchPage(), transition: Transition.cupertino),
+            child: Icon(
+              Icons.search,
+              size: 30.0,
+            ))
+      ],
+    );
+  }
+
+  Column appbarText() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Hi ,${FirebaseAuth.instance.currentUser.displayName.split(" ").first} ",
+          style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.w800),
+        ),
+        Text(
+          "Manage your inventory here",
+          style: TextStyle(fontSize: 15.0, color: Color.fromRGBO(0, 0, 0, 0.6),fontWeight: FontWeight.w600),
+        )
+      ],
     );
   }
 
@@ -223,12 +252,12 @@ class _HomeScreenState extends State<HomeScreen> {
         stream: DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
             .getAllItems(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-                child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        Color.fromRGBO(222, 110, 131, 1.0))));
-          }
+          // if (snapshot.connectionState == ConnectionState.waiting) {
+          //   return Center(
+          //       child: CircularProgressIndicator(
+          //           valueColor: AlwaysStoppedAnimation<Color>(
+          //               Color.fromRGBO(222, 110, 131, 1.0))));
+          // }
           if (snapshot.hasData) {
             List<QueryDocumentSnapshot> items =
                 snapshot.data as List<QueryDocumentSnapshot>;
@@ -322,15 +351,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
         .deleteRecord(id);
-    BotToast.showSimpleNotification(
-        title: "${getDecText(food.get("foodName"))} deleted",
-        align: Alignment.bottomCenter,
-        backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
-        titleStyle: TextStyle(color: Colors.white),
-        closeIcon: Icon(
-          Icons.close,
-          color: Colors.white,
-        ));
+        toast("${getDecText(food.get("foodName"))} deleted");
+    
   }
 
   Widget noInternet() {
@@ -467,8 +489,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                         // .take(5)
                                         // .join(" "),
                                         overflow: TextOverflow.ellipsis,
+                                        
                                         style: TextStyle(
                                             color: Colors.white,
+                                            
                                             fontSize: 16.0),
                                       ),
                                     ),
@@ -484,6 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         softWrap: false,
                                         style: TextStyle(
                                             color: Colors.white,
+                                            fontWeight: FontWeight.w600,
                                             fontSize: 16.0),
                                       ),
                                     ),
@@ -495,12 +520,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               text: TextSpan(children: [
                                 TextSpan(
                                     text: 'Qty: ',
-                                    style: TextStyle(color: Colors.white)),
+                                    style: TextStyle(color: Colors.white,fontWeight: FontWeight.w600,)),
                                 TextSpan(
                                     text: food.get("qty").toString(),
                                     style: TextStyle(
                                         color: Colors.white,
-                                        fontWeight: FontWeight.bold)),
+                                        fontWeight: FontWeight.w700,)),
                               ]),
                             ),
                             SizedBox(
@@ -510,6 +535,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               getDecText(food.id),
                               style: TextStyle(
                                   fontSize: 12.0,
+                                  fontWeight: FontWeight.w500,
                                   color: Color.fromRGBO(255, 255, 255, 0.7)),
                             ),
                             SizedBox(
@@ -519,6 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               "${DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(food.get("date")))}",
                               style: TextStyle(
                                   fontSize: 12.0,
+                                  fontWeight: FontWeight.w500,
                                   color: Color.fromRGBO(255, 255, 255, 0.7)),
                             )
                           ],

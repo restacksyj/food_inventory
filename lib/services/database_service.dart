@@ -1,12 +1,14 @@
 import 'dart:io';
 
-import 'package:bot_toast/bot_toast.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/food_model.dart';
 import 'package:food_inventory/services/encryption.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:get/get.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 class DatabaseService {
   final String uid;
@@ -86,7 +88,7 @@ class DatabaseService {
         duration: Duration(seconds: 3),
       ));
     } on Exception {
-      BotToast.showText(text: "Some error occured");
+      toast( "Some error occured");
     } catch (e) {
       print(e);
       rethrow;
@@ -101,15 +103,8 @@ class DatabaseService {
           .doc(encBarc(barcode))
           .get();
       if (docref.exists) {
-        BotToast.showSimpleNotification(
-            title: "Item exists. Updating quantity",
-            align: Alignment.bottomCenter,
-            backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
-            titleStyle: TextStyle(color: Colors.white),
-            closeIcon: Icon(
-              Icons.close,
-              color: Colors.white,
-            ));
+        toast("Item exists. Updating quantity");
+      
         return await usersCollection
             .doc(uid)
             .collection("foods")
@@ -117,15 +112,8 @@ class DatabaseService {
             .update({"qty": docref.get("qty") + 1});
       } else {
         createRecord(barcode);
-        BotToast.showSimpleNotification(
-            title: "Added to inventory",
-            align: Alignment.bottomCenter,
-            backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
-            titleStyle: TextStyle(color: Colors.white),
-            closeIcon: Icon(
-              Icons.close,
-              color: Colors.white,
-            ));
+        toast("Added to inventory");
+        
       }
     } on SocketException {
       Get.showSnackbar(GetBar(
@@ -134,9 +122,9 @@ class DatabaseService {
         duration: Duration(seconds: 3),
       ));
     } on Exception {
-      BotToast.showText(text: "Some error occured");
+      toast( "Some error occured");
     } catch (e) {
-      BotToast.showText(text: "Some error occured");
+      toast( "Some error occured");
       print(e);
       rethrow;
     }
@@ -164,6 +152,7 @@ class DatabaseService {
 
   deleteRecord(String name) async {
     await usersCollection.doc(uid).collection("foods").doc(name).delete();
+    getAllItems();
   }
 
   updateFoodItem({String foodName, int qty, String barcode}) async {
@@ -222,4 +211,23 @@ class GetFood extends GetConnect {
       return null;
     }
   }
+}
+
+
+class GetData extends GetxController{
+
+  final CollectionReference usersCollection =
+      FirebaseFirestore.instance.collection('users');
+
+  RxList streamList = [].obs;
+
+  Stream getAllItems() {
+    return usersCollection
+        .doc(FirebaseAuth.instance.currentUser.uid)
+        .collection("foods")
+        .orderBy("date", descending: false)
+        .snapshots()
+        .map((event) => streamList.add(event.docs.toList()) );
+  }
+
 }

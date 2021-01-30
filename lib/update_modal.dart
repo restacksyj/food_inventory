@@ -7,8 +7,8 @@ import 'package:food_inventory/models/food_model.dart';
 import 'package:food_inventory/services/database_service.dart';
 import 'package:food_inventory/services/encryption.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:bot_toast/bot_toast.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:overlay_support/overlay_support.dart';
 
 final GlobalKey<FormState> _formKeyTwo = GlobalKey<FormState>();
 final TextEditingController _updateFoodName = TextEditingController();
@@ -74,17 +74,9 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                         if (value.isNotEmpty) {
                           formValid(context, food);
 
-                          BotToast.showSimpleNotification(
-                              align: Alignment.bottomCenter,
-                              title: "Updated Successfully",
-                              backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
-                              titleStyle: TextStyle(color: Colors.white),
-                              closeIcon: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                              ));
+                          updateSuccessfully();
                         } else {
-                          BotToast.showText(text: 'Value cannot be empty');
+                          toast( 'Value cannot be empty');
                         }
                       },
                       validator: (String value) {
@@ -135,25 +127,17 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                           formValid(context, food);
                           // MovieService().updateData(movie.id,value);
                           // Navigator.of(context).pop();
-                          BotToast.showSimpleNotification(
-                              align: Alignment.bottomCenter,
-                              title: "Updated Successfully",
-                              backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
-                              titleStyle: TextStyle(color: Colors.white),
-                              closeIcon: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                              ));
+                          updateSuccessfully();
                         } else {
                           // showToast("Value cannot be empty");
-                          BotToast.showText(text: 'Value cannot be empty');
+                          toast('Value cannot be empty');
                         }
                       },
                       // initialValue: food.get("qty").toString(),
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       keyboardType: TextInputType.number,
                       validator: (String value) {
-                        if (num.parse(value) == 0 ||
+                        if (
                             value.isEmpty ||
                             num.parse(value) < 0) {
                           return "Enter valid qty";
@@ -212,6 +196,11 @@ Widget button(QueryDocumentSnapshot food, context) {
   );
 }
 
+
+updateSuccessfully(){
+    return toast("Updated Successfully");
+  }
+
 formValid(context, food) {
   if (_formKeyTwo.currentState.validate()) {
     _formKeyTwo.currentState.save();
@@ -220,16 +209,11 @@ formValid(context, food) {
         barcode: food.id,
         qty: int.parse(_updateFoodQty.text));
     Navigator.of(context).pop();
-    BotToast.showSimpleNotification(
-        align: Alignment.bottomCenter,
-        title: "Updated Successfully",
-        backgroundColor: Color.fromRGBO(0, 0, 0, 0.7),
-        titleStyle: TextStyle(color: Colors.white),
-        closeIcon: Icon(
-          Icons.close,
-          color: Colors.white,
-        ));
+    updateSuccessfully();
   } else {
-    BotToast.showText(text: 'Value cannot be empty');
+    toast( 'Value cannot be empty');
   }
+
+
+  
 }

@@ -29,13 +29,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.0-nullsafety.1"
-  bot_toast:
-    dependency: "direct main"
-    description:
-      name: bot_toast
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.0.5"
   characters:
     dependency: transitive
     description:
@@ -141,6 +134,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.0"
+  diacritic:
+    dependency: transitive
+    description:
+      name: diacritic
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.1"
   encrypt:
     dependency: "direct main"
     description:
@@ -254,6 +254,34 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.24.0"
+  get_core:
+    dependency: transitive
+    description:
+      name: get_core
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.13.0"
+  get_instance:
+    dependency: transitive
+    description:
+      name: get_instance
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.13.0"
+  get_rx:
+    dependency: transitive
+    description:
+      name: get_rx
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.13.0"
+  get_state_manager:
+    dependency: transitive
+    description:
+      name: get_state_manager
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.13.0"
   google_sign_in:
     dependency: "direct main"
     description:
@@ -317,6 +345,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0+1"
+  overlay_support:
+    dependency: "direct main"
+    description:
+      name: overlay_support
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.5"
   path:
     dependency: transitive
     description:
@@ -408,6 +443,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.25.0"
+  search_app_bar_page:
+    dependency: "direct main"
+    description:
+      name: search_app_bar_page
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.4.2"
   search_page:
     dependency: "direct main"
     description:

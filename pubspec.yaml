@@ -32,6 +32,7 @@ dependencies:
   qrscan: ^0.2.21
   permission_handler: ^5.0.1+1
   flutter_offline: ^0.3.0
+  overlay_support: ^1.0.5
   # image_picker: ^0.6.7+21
   # image_gallery: ^1.2.0
   # image_gallery_saver: ^1.6.7
@@ -43,7 +44,6 @@ dependencies:
   firebase_core: ^0.7.0
   flutter_statusbarcolor: ^0.2.3
   modal_bottom_sheet: ^1.0.0+1
-  bot_toast: ^3.0.5
   shimmer: ^1.1.2
   search_page: ^1.4.0
   delayed_display: ^1.1.0
@@ -51,6 +51,7 @@ dependencies:
   shared_preferences: ^0.5.12+4
   flutter_secure_storage: ^3.3.5
   rxdart: ^0.25.0
+  search_app_bar_page: ^1.4.2
 
 dev_dependencies:
   flutter_test:
@@ -83,6 +84,13 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Regular.ttf
+        - asset: assets/fonts/Manrope-Medium.ttf
+        - asset: assets/fonts/Manrope-Bold.ttf
+        - asset: assets/fonts/Manrope-Light.ttf  
   # fonts:
   #   - family: Schyler
   #     fonts:
