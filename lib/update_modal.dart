@@ -27,9 +27,11 @@ showUpdateModal(BuildContext context, QueryDocumentSnapshot food) {
   return showMaterialModalBottomSheet(
     expand: false,
     enableDrag: true,
+    backgroundColor: Color.fromRGBO(13, 13, 13, 1.0),
+
     shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(25.0), topRight: Radius.circular(25.0))),
+            topLeft: Radius.circular(30.0), topRight: Radius.circular(30.0))),
     context: context,
     builder: (context) => WillPopScope(
       child: modalBody(context, food),
@@ -40,6 +42,7 @@ showUpdateModal(BuildContext context, QueryDocumentSnapshot food) {
 
 Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
   return Container(
+    // color: Color.fromRGBO(13, 13, 13, 1.0),
     padding: EdgeInsets.only(
       bottom: MediaQuery.of(context).viewInsets.bottom,
     ),
@@ -69,14 +72,13 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                     height: 80.0,
                     child: TextFormField(
                       controller: _updateFoodName,
-
                       onFieldSubmitted: (value) {
                         if (value.isNotEmpty) {
                           formValid(context, food);
 
                           updateSuccessfully();
                         } else {
-                          toast( 'Value cannot be empty');
+                          toast('Value cannot be empty');
                         }
                       },
                       validator: (String value) {
@@ -86,6 +88,7 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                         return null;
                       },
                       cursorColor: blue,
+                      style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                           isDense: true,
                           labelText: "Food Name",
@@ -93,12 +96,16 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           filled: true,
                           hintText: "Food item",
-                          hintStyle: TextStyle(color: Colors.black),
+                          hintStyle: TextStyle(color: Colors.white),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.0),
                             borderSide: BorderSide(
                               color: blue,
                             ),
+                          ),
+                          enabledBorder:  OutlineInputBorder(
+                            borderRadius:  BorderRadius.circular(10.0),
+                            borderSide: BorderSide(color: blue),
                           ),
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 16.0, horizontal: 16.0),
@@ -137,14 +144,17 @@ Widget modalBody(BuildContext context, QueryDocumentSnapshot food) {
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       keyboardType: TextInputType.number,
                       validator: (String value) {
-                        if (
-                            value.isEmpty ||
-                            num.parse(value) < 0) {
+                        if (value.isEmpty || num.parse(value) < 0) {
                           return "Enter valid qty";
                         }
                         return null;
                       },
+                      style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
+                        enabledBorder:  OutlineInputBorder(
+                            borderRadius:  BorderRadius.circular(10.0),
+                            borderSide: BorderSide(color: blue),
+                          ),
                           isDense: true,
                           labelText: "Qty",
                           floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -196,10 +206,9 @@ Widget button(QueryDocumentSnapshot food, context) {
   );
 }
 
-
-updateSuccessfully(){
-    return toast("Updated Successfully");
-  }
+updateSuccessfully() {
+  return toast("Updated Successfully");
+}
 
 formValid(context, food) {
   if (_formKeyTwo.currentState.validate()) {
@@ -211,9 +220,6 @@ formValid(context, food) {
     Navigator.of(context).pop();
     updateSuccessfully();
   } else {
-    toast( 'Value cannot be empty');
+    toast('Value cannot be empty');
   }
-
-
-  
 }

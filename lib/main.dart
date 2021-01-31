@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_offline/flutter_offline.dart';
+import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:food_inventory/login_screen.dart';
 import 'package:food_inventory/search_page.dart';
 import 'package:food_inventory/services/database_service.dart';
@@ -57,6 +58,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    FlutterStatusbarcolor.setStatusBarColor(Color.fromRGBO(37, 37, 37, 1.0));
+
     return OverlaySupport(
           child: GetMaterialApp(
             theme: ThemeData(fontFamily: "Manrope"),
@@ -82,13 +85,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     //  FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    // FlutterStatusbarcolor.setStatusBarColor(Colors.white);
+    // FlutterStatusbarcolor.setStatusBarColor(Colors.black);
   }
 
   void dispose() {
     super.dispose();
     scrolledIndex.close();
     barcodeStream.close();
+  }
+
+   listState(QueryDocumentSnapshot food,int index)async{
+    return await deleteFromDB(food, food.id, index);
   }
 
   Future _scan() async {
@@ -145,10 +152,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget bodyView() {
     return SafeArea(
       top: true,
-      child: Padding(
+      child: Container(
         padding: const EdgeInsets.only(
-          top: 20.0,
-        ),
+          top: 10.0),
+        color: Color.fromRGBO(37, 37, 37, 1.0),
         child: Column(
           children: [
             Padding(
@@ -156,6 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const EdgeInsets.only(left: 15.0, top: 10.0, right: 15.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   appbarText(),
                   buttonBar(),
@@ -196,6 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Icon(
             Icons.logout,
             size: 30.0,
+            color: Colors.white,
           ),
         ),
         SizedBox(
@@ -204,10 +213,11 @@ class _HomeScreenState extends State<HomeScreen> {
         InkWell(
             radius: 30.0,
             customBorder: CircleBorder(),
-            onTap: () => Get.to(SearchPage(), transition: Transition.cupertino),
+            onTap: () => Get.to(SearchPage(), transition: Transition.cupertino,arguments: listState),
             child: Icon(
               Icons.search,
               size: 30.0,
+              color: Colors.white,
             ))
       ],
     );
@@ -219,12 +229,14 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           "Hi ,${FirebaseAuth.instance.currentUser.displayName.split(" ").first} ",
-          style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.w800),
+          style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.w800,color: Colors.white),
         ),
         Text(
           "Manage your inventory here",
-          style: TextStyle(fontSize: 15.0, color: Color.fromRGBO(0, 0, 0, 0.6),fontWeight: FontWeight.w600),
-        )
+          style: TextStyle(fontSize: 15.0, color: Color.fromRGBO(255, 255, 255, 0.6),fontWeight: FontWeight.w600),
+        ),
+        Padding(padding: EdgeInsets.only(bottom: 10.0)),
+        
       ],
     );
   }
@@ -264,23 +276,27 @@ class _HomeScreenState extends State<HomeScreen> {
             if (items.length == 0) {
               return noItems();
             } else {
-              return ScrollConfiguration(
-                behavior: ScrollBehavior(),
-                child: GlowingOverscrollIndicator(
-                  color: blue,
-                  axisDirection: AxisDirection.down,
-                  child: Scrollbar(
-                    child: AnimatedList(
-                        controller: _controller,
-                        key: _key,
-                        padding: EdgeInsets.all(10.0),
-                        itemBuilder: (context, int index, animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: foodItem(items[index], index),
-                          );
-                        },
-                        initialItemCount: items.length),
+              return Container(
+                              color: Color.fromRGBO(13, 13, 13, 1.0),        
+                              child: ScrollConfiguration(
+                  behavior: ScrollBehavior(),
+                  child: GlowingOverscrollIndicator(
+                    color: blue,
+                    axisDirection: AxisDirection.down,
+                    child: Scrollbar(
+                      child: AnimatedList(
+
+                          controller: _controller,
+                          key: _key,
+                          padding: EdgeInsets.all(10.0),
+                          itemBuilder: (context, int index, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: foodItem(items[index], index),
+                            );
+                          },
+                          initialItemCount: items.length),
+                    ),
                   ),
                 ),
               );
@@ -452,12 +468,12 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => showUpdateModal(context, food),
             onDoubleTap: () => deleteFromDB(food, food.id, index),
             child: Container(
-              padding: EdgeInsets.all(10.0),
-              margin: EdgeInsets.all(3.0),
+              padding: EdgeInsets.all(8.0),
+              // margin: EdgeInsets.all(3.0),
               decoration: BoxDecoration(
                   color: index == scrolledIndex.value
                       ? Colors.orange
-                      : Color.fromRGBO(109, 97, 231, 1.0),
+                      : Color.fromRGBO(13,13, 13, 1.0),
                   borderRadius: BorderRadius.all(Radius.circular(5.0))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       imageWidget(food.get("imageUrl")),
                       Padding(
-                        padding: const EdgeInsets.only(right: 20.0),
+                        padding: const EdgeInsets.only(right: 25.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
