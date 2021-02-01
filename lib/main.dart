@@ -637,9 +637,9 @@ class _HomeScreenState extends State<HomeScreen> {
 //fix statusbarcolor -> done
 //Google sign in and intro screen -> done
 //user logout and clean code -> done
-//deploy to ustsavized :)
+//deploy to utsavized :)
 
 //last tasks
-//getImage and chnage layout of foodTile -> done (partially)
-//add search
-//done , no more this is it
+//getImage and chnage layout of foodTile -> done (partially) -> done
+//add search -> done
+//done , no more this is it -> done
