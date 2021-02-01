@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_offline/flutter_offline.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:food_inventory/login_screen.dart';
 import 'package:food_inventory/search_page.dart';
@@ -225,11 +225,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Column appbarText() {
+    String name = toBeginningOfSentenceCase('${FirebaseAuth.instance.currentUser.displayName.split(" ").first}');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Hi ,${FirebaseAuth.instance.currentUser.displayName.split(" ").first} ",
+        AutoSizeText(
+          "Hi ,$name",
+          maxLines: 1,
           style: TextStyle(
               fontSize: 24.0, fontWeight: FontWeight.w800, color: Colors.white),
         ),
@@ -612,52 +614,9 @@ class _HomeScreenState extends State<HomeScreen> {
         });
   }
 
-//   showSearchPage()async{
-//    List<Person> people = [
-//     Person('Mike', 'Barron', 64),
-//     Person('Todd', 'Black', 30),
-//     Person('Ahmad', 'Edwards', 55),
-//     Person('Anthony', 'Johnson', 67),
-//     Person('Annette', 'Brooks', 39),
-//   ];
-
-//     // final items = await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
-//     //         .getAllItems().toList();
-//     //         print(items);
-//      showSearch(
-//           context: context,
-//           delegate: SearchPage<Person>(
-//             items: people,
-//             searchLabel: 'Search people',
-//             suggestion: Center(
-//               child: Text('Filter people by name, surname or age'),
-//             ),
-//             failure: Center(
-//               child: Text('No person found :('),
-//             ),
-//             filter: (person) => [
-//               person.name,
-//               person.surname,
-//               person.age.toString(),
-//             ],
-//             builder: (person) => ListTile(
-//               title: Text(person.name),
-//               subtitle: Text(person.surname),
-//               trailing: Text('${person.age} yo'),
-//             ),
-//           ),
-//         );
 
 }
 
-//   }
-// }
-// class Person {
-//   final String name, surname;
-//   final num age;
-
-//   Person(this.name, this.surname, this.age);
-// }
 //Barcode scanning works - no image pickup - DOne
 //Google login - Done
 //Encryption - done
