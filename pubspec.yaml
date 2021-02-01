@@ -45,13 +45,11 @@ dependencies:
   flutter_statusbarcolor: ^0.2.3
   modal_bottom_sheet: ^1.0.0+1
   shimmer: ^1.1.2
-  search_page: ^1.4.0
   delayed_display: ^1.1.0
   sign_button: ^1.0.1
   shared_preferences: ^0.5.12+4
   flutter_secure_storage: ^3.3.5
   rxdart: ^0.25.0
-  search_app_bar_page: ^1.4.2
 
 dev_dependencies:
   flutter_test:

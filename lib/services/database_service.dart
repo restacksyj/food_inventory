@@ -20,8 +20,8 @@ class DatabaseService {
   final Encryption encryption = Encryption();
 
   encBarc(String barcode) {
-    final encStr = Encryption.encryptText(barcode).base64;
-    return encStr.replaceAll("/", "*");
+    final encStr = Encryption.encryptText(barcode).base16;
+    return encStr;
   }
 
   Stream getAllItems() {
@@ -69,10 +69,10 @@ class DatabaseService {
                   foodName: "Loading name..", date: date, qty: 1, imageUrl: "")
               .toJson());
       final foodName = await foodGetter.getfoodName(barcode);
-      final enc = Encryption.encryptText(foodName).base64;
+      final enc = Encryption.encryptText(foodName).base16;
       final foodImgUrl = await foodGetter.getfoodImg(barcode);
       if (foodImgUrl != null) {
-        encUrl = Encryption.encryptText(foodImgUrl).base64;
+        encUrl = Encryption.encryptText(foodImgUrl).base16;
       } else {
         encUrl = null;
       }
@@ -158,7 +158,7 @@ class DatabaseService {
   updateFoodItem({String foodName, int qty, String barcode}) async {
     try {
       final  encFoodName =
-          Encryption.encryptText(foodName).base64;
+          Encryption.encryptText(foodName).base16;
       return await usersCollection
           .doc(uid)
           .collection("foods")

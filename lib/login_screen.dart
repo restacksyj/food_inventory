@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -12,10 +13,12 @@ import 'package:encrypt/encrypt.dart' as encrypt;
 
 class LoginScreen extends StatelessWidget {
   final storage = FlutterSecureStorage();
-  
+
   Future<User> googleSignin() async {
     User currentUser;
     try {
+      final CollectionReference usersCollection =
+          FirebaseFirestore.instance.collection('users');
       final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
       print(googleUser.toString());
       final GoogleSignInAuthentication googleAuth =
@@ -25,13 +28,34 @@ class LoginScreen extends StatelessWidget {
         idToken: googleAuth.idToken,
       );
       final auth = await FirebaseAuth.instance.signInWithCredential(credential);
+      final usersList = await usersCollection.get();
+
       assert(auth.user.email != null);
       assert(auth.user.displayName != null);
       assert(!auth.user.isAnonymous);
       assert(await auth.user.getIdToken() != null);
       currentUser = FirebaseAuth.instance.currentUser;
       assert(auth.user.uid == currentUser.uid);
+
       savePrefs(auth.user.uid);
+
+      // List<QueryDocumentSnapshot> nl = usersList.docs;
+
+      // for (int i = 0; i < nl.length; i++) {
+      //   if (nl[i].id == auth.user.uid) {
+      //     print("yes");
+      //     print(key);
+      //   //   storage
+      //   // .read(key: "encryptKey")
+      //   // .then((value) => print(value));
+      //   } else {
+      //     setKeyIV();
+      //   }
+      // }
+
+      // // if(usersList.docs.contains(auth.user.uid)!=true){
+      // //   setKeyIV();
+      // // }
 
       if (await storage.read(key: auth.user.uid) != "true") {
         setKeyIV();
@@ -54,7 +78,6 @@ class LoginScreen extends StatelessWidget {
     final iv = encrypt.IV.fromLength(16);
     final prefs = await SharedPreferences.getInstance();
 
-
     await storage.write(key: "encryptKey", value: key.base64);
     await storage.write(key: "IV", value: iv.base64);
     await storage.write(key: prefs.getString("authId"), value: "true");
@@ -62,7 +85,6 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: Container(
         width: MediaQuery.of(context).size.width,

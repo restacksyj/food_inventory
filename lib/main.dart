@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_offline/flutter_offline.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:food_inventory/login_screen.dart';
 import 'package:food_inventory/search_page.dart';
@@ -61,8 +62,8 @@ class _MyAppState extends State<MyApp> {
     FlutterStatusbarcolor.setStatusBarColor(Color.fromRGBO(37, 37, 37, 1.0));
 
     return OverlaySupport(
-          child: GetMaterialApp(
-            theme: ThemeData(fontFamily: "Manrope"),
+      child: GetMaterialApp(
+        theme: ThemeData(fontFamily: "Manrope"),
         debugShowCheckedModeBanner: false,
         home: auth == null ? LoginScreen() : HomeScreen(),
       ),
@@ -94,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     barcodeStream.close();
   }
 
-   listState(QueryDocumentSnapshot food,int index)async{
+  listState(QueryDocumentSnapshot food, int index) async {
     return await deleteFromDB(food, food.id, index);
   }
 
@@ -153,8 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return SafeArea(
       top: true,
       child: Container(
-        padding: const EdgeInsets.only(
-          top: 10.0),
+        padding: const EdgeInsets.only(top: 10.0),
         color: Color.fromRGBO(37, 37, 37, 1.0),
         child: Column(
           children: [
@@ -213,7 +213,8 @@ class _HomeScreenState extends State<HomeScreen> {
         InkWell(
             radius: 30.0,
             customBorder: CircleBorder(),
-            onTap: () => Get.to(SearchPage(), transition: Transition.cupertino,arguments: listState),
+            onTap: () => Get.to(SearchPage(),
+                transition: Transition.cupertino, arguments: listState),
             child: Icon(
               Icons.search,
               size: 30.0,
@@ -229,14 +230,17 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           "Hi ,${FirebaseAuth.instance.currentUser.displayName.split(" ").first} ",
-          style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.w800,color: Colors.white),
+          style: TextStyle(
+              fontSize: 24.0, fontWeight: FontWeight.w800, color: Colors.white),
         ),
         Text(
           "Manage your inventory here",
-          style: TextStyle(fontSize: 15.0, color: Color.fromRGBO(255, 255, 255, 0.6),fontWeight: FontWeight.w600),
+          style: TextStyle(
+              fontSize: 15.0,
+              color: Color.fromRGBO(255, 255, 255, 0.6),
+              fontWeight: FontWeight.w600),
         ),
         Padding(padding: EdgeInsets.only(bottom: 10.0)),
-        
       ],
     );
   }
@@ -277,15 +281,14 @@ class _HomeScreenState extends State<HomeScreen> {
               return noItems();
             } else {
               return Container(
-                              color: Color.fromRGBO(13, 13, 13, 1.0),        
-                              child: ScrollConfiguration(
+                color: Color.fromRGBO(13, 13, 13, 1.0),
+                child: ScrollConfiguration(
                   behavior: ScrollBehavior(),
                   child: GlowingOverscrollIndicator(
                     color: blue,
                     axisDirection: AxisDirection.down,
                     child: Scrollbar(
                       child: AnimatedList(
-
                           controller: _controller,
                           key: _key,
                           padding: EdgeInsets.all(10.0),
@@ -321,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   getDecText(text) {
-    return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
+    return Encryption.decryptText(encrypt.Encrypted.fromBase16(text));
   }
 
   addToDb() async {
@@ -367,8 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     await DatabaseService(uid: FirebaseAuth.instance.currentUser.uid)
         .deleteRecord(id);
-        toast("${getDecText(food.get("foodName"))} deleted");
-    
+    toast("${getDecText(food.get("foodName"))} deleted");
   }
 
   Widget noInternet() {
@@ -399,14 +401,14 @@ class _HomeScreenState extends State<HomeScreen> {
         Text(
           "Nothing here :/",
           style: TextStyle(
-            color: Color.fromRGBO(0, 0, 0, 0.4),
+            color: Color.fromRGBO(255, 255, 255, 0.4),
           ),
         ),
         SizedBox(
           height: 2.0,
         ),
         Text("Start adding items ",
-            style: TextStyle(color: Color.fromRGBO(0, 0, 0, 0.4)))
+            style: TextStyle(color: Color.fromRGBO(255, 255, 255, 0.4)))
       ],
     );
   }
@@ -461,128 +463,149 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget foodItem(QueryDocumentSnapshot food, int index) {
+    print((MediaQuery.of(context).size.width/2)/10);
     return StreamBuilder<Object>(
         stream: scrolledIndex,
         builder: (context, snapshotTwo) {
           return InkWell(
             onTap: () => showUpdateModal(context, food),
             onDoubleTap: () => deleteFromDB(food, food.id, index),
-            child: Container(
-              padding: EdgeInsets.all(8.0),
-              // margin: EdgeInsets.all(3.0),
-              decoration: BoxDecoration(
-                  color: index == scrolledIndex.value
-                      ? Colors.orange
-                      : Color.fromRGBO(13,13, 13, 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(5.0))),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      imageWidget(food.get("imageUrl")),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 25.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            food
-                                    .get("foodName")
-                                    .toString()
-                                    .contains("Loading name..")
-                                ? SizedBox(
-                                    width: 200.0,
-                                    child: Shimmer.fromColors(
-                                      baseColor: Colors.grey[300],
-                                      highlightColor: Colors.grey[100],
-                                      child: Text(
-                                        food.get("foodName"),
-                                        // .toString()
-                                        // .split(" ")
-                                        // .take(5)
-                                        // .join(" "),
-                                        overflow: TextOverflow.ellipsis,
-                                        
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            
-                                            fontSize: 16.0),
+            child: ClipRRect(
+                          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+                          child: Container(
+                padding: EdgeInsets.all(8.0),
+                // margin: EdgeInsets.only(bottom: 3.0),
+                decoration: BoxDecoration(
+                    // border: Border.all(color:Colors.green,width: 2.0),
+                    border: Border(
+                        bottom:
+                            BorderSide(color: Color.fromRGBO(13, 13, 13, 1.0)),
+                        top: BorderSide(color: Color.fromRGBO(13, 13, 13, 1.0)),
+                        right: BorderSide(color: Color.fromRGBO(13, 13, 13, 1.0)),
+                        left: BorderSide(
+                            color: food.get("qty") == 0
+                                ? Colors.red[400]
+                                : Color.fromRGBO(13, 13, 13, 1.0),width: 5.0
+                                )),
+                    color: index == scrolledIndex.value
+                        ? Colors.orange
+                        : Color.fromRGBO(13, 13, 13, 1.0),
+                    // borderRadius: BorderRadius.all(Radius.circular(5.0))
+                    ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        imageWidget(food.get("imageUrl")),
+                        SizedBox(width:15.0),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              food
+                                      .get("foodName")
+                                      .toString()
+                                      .contains("Loading name..")
+                                  ? SizedBox(
+                                      width: 200.0,
+                                      child: Shimmer.fromColors(
+                                        baseColor: Colors.grey[300],
+                                        highlightColor: Colors.grey[100],
+                                        child: Text(
+                                          food.get("foodName"),
+                                          // .toString()
+                                          // .split(" ")
+                                          // .take(5)
+                                          // .join(" "),
+                                          overflow: TextOverflow.ellipsis,
+
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16.0),
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox(
+                                      width: 200.0,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Text(
+                                          getDecText(food.get("foodName")),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16.0),
+                                        ),
                                       ),
                                     ),
-                                  )
-                                : SizedBox(
-                                    width: 200.0,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Text(
-                                        getDecText(food.get("foodName")),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16.0),
-                                      ),
-                                    ),
-                                  ),
-                            SizedBox(
-                              height: 2.0,
-                            ),
-                            RichText(
-                              text: TextSpan(children: [
-                                TextSpan(
-                                    text: 'Qty: ',
-                                    style: TextStyle(color: Colors.white,fontWeight: FontWeight.w600,)),
-                                TextSpan(
-                                    text: food.get("qty").toString(),
-                                    style: TextStyle(
+                              SizedBox(
+                                height: 2.0,
+                              ),
+                              RichText(
+                                text: TextSpan(children: [
+                                  TextSpan(
+                                      text: 'Qty: ',
+                                      style: TextStyle(
                                         color: Colors.white,
-                                        fontWeight: FontWeight.w700,)),
-                              ]),
-                            ),
-                            SizedBox(
-                              height: 4.0,
-                            ),
-                            Text(
-                              getDecText(food.id),
-                              style: TextStyle(
-                                  fontSize: 12.0,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color.fromRGBO(255, 255, 255, 0.7)),
-                            ),
-                            SizedBox(
-                              height: 2.0,
-                            ),
-                            Text(
-                              "${DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(food.get("date")))}",
-                              style: TextStyle(
-                                  fontSize: 12.0,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color.fromRGBO(255, 255, 255, 0.7)),
-                            )
-                          ],
+                                        fontWeight: FontWeight.w600,
+                                      )),
+                                  TextSpan(
+                                      text: food.get("qty").toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      )),
+                                ]),
+                              ),
+                              SizedBox(
+                                height: 4.0,
+                              ),
+                              Text(
+                                getDecText(food.id),
+                                style: TextStyle(
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color.fromRGBO(255, 255, 255, 0.7)),
+                              ),
+                              SizedBox(
+                                height: 2.0,
+                              ),
+                              Text(
+                                "${DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(food.get("date")))}",
+                                style: TextStyle(
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color.fromRGBO(255, 255, 255, 0.7)),
+                              )
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 5.0,
-                  ),
+                       //SizedBox(width: 30.0,)
+                      ],
+                    ),
+                    SizedBox(
+                      height: 5.0,
+                    ),
 
-                  // Row(
-                  //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //   children: [
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //   children: [
 
-                  //   ],
-                  // ),
-                  // SizedBox(
-                  //   height: 10.0,
-                  // )
-                ],
+                    //   ],
+                    // ),
+                    // SizedBox(
+                    //   height: 10.0,
+                    // )
+                  ],
+                ),
               ),
             ),
           );

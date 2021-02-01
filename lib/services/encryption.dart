@@ -23,8 +23,12 @@ class Encryption {
   }
 
   static decryptText(encrypt.Encrypted text)  {
-    final encrypt.Encrypted incomingText = encrypt.Encrypted.fromBase64(text.base64.replaceAll("*", "/")) ;
+    // final texttodecode = text.base64.replaceAll("*", "/");
+    // print(texttodecode.toString());
+    final encrypt.Encrypted incomingText = encrypt.Encrypted.fromBase16(text.base16) ;
+    
     final decryptedText = _encrypter().decrypt(incomingText, iv: iv);
+    print(decryptedText);
     return decryptedText;
   }
 }

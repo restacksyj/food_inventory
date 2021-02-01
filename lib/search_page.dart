@@ -77,7 +77,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   getDecText(text) {
-    return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
+    return Encryption.decryptText(encrypt.Encrypted.fromBase16(text));
   }
 
   deleteFromDB(QueryDocumentSnapshot food) async {
@@ -272,22 +272,26 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget noItems() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          "Nothing here :/",
-          style: TextStyle(
-            color: Color.fromRGBO(0, 0, 0, 0.4),
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        
+        children: [
+          Text(
+            "Nothing here :/",
+            style: TextStyle(
+              color: Color.fromRGBO(255, 255, 255, 0.4),
+            ),
           ),
-        ),
-        SizedBox(
-          height: 2.0,
-        ),
-        Text("Start adding items ",
-            style: TextStyle(color: Color.fromRGBO(0, 0, 0, 0.4)))
-      ],
+          SizedBox(
+            height: 2.0,
+          ),
+          Text("Start adding items ",
+              style: TextStyle(color: Color.fromRGBO(255, 255, 255, 0.4)))
+        ],
+      ),
     );
   }
 }

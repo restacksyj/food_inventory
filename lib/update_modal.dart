@@ -17,12 +17,12 @@ final Color blue = Color.fromRGBO(109, 97, 231, 1.0);
 final Color pink = Color.fromRGBO(222, 110, 131, 1.0);
 
 getDecText(text) {
-  return Encryption.decryptText(encrypt.Encrypted.fromBase64(text));
+  return Encryption.decryptText(encrypt.Encrypted.fromBase16(text));
 }
 
 showUpdateModal(BuildContext context, QueryDocumentSnapshot food) {
   _updateFoodName.text = Encryption.decryptText(
-      encrypt.Encrypted.fromBase64(food.get("foodName")));
+      encrypt.Encrypted.fromBase16(food.get("foodName")));
   _updateFoodQty.text = food.get("qty").toString();
   return showMaterialModalBottomSheet(
     expand: false,
