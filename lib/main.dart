@@ -463,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget foodItem(QueryDocumentSnapshot food, int index) {
-    print((MediaQuery.of(context).size.width/2)/10);
+    
     return StreamBuilder<Object>(
         stream: scrolledIndex,
         builder: (context, snapshotTwo) {
@@ -531,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     )
                                   : SizedBox(
-                                      width: 200.0,
+                                      width: MediaQuery.of(context).size.width/1.5,
                                       child: SingleChildScrollView(
                                         scrollDirection: Axis.horizontal,
                                         child: Text(
